@@ -6,7 +6,11 @@ export interface UsuarioBaseDTO {
     fldNombre: string;
     fldTelefono: string;
     fldCorreoElectronico: string;
-    fldContrasenia: string;  
+    fldContrasenia: string;
+    /** 'ADMIN' | 'BOTANERO' — campos nuevos del portal de botaneros (PLAN-ADMIN-V2 §6) */
+    fldRol?: string;
+    /** Solo cuentas BOTANERO: empresa a la que pertenece */
+    fkIdEmpresa?: number | null;
 }
 
 export interface UsuarioLisDTO extends UsuarioBaseDTO {

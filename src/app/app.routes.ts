@@ -45,6 +45,10 @@ export const routes: Routes = [
         path: 'dashboard',
         loadComponent: () => import('./admin/pages/dashboard/dashboard.component').then(m => m.DashboardComponent)
       },
+      {
+        path: 'cuentas-botanero',
+        loadComponent: () => import('./admin/pages/cuentas-botanero/cuentas-botanero.component').then(m => m.CuentasBotaneroComponent)
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },
