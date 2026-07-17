@@ -4,13 +4,14 @@ import { provideHttpClient, withInterceptors, withFetch } from '@angular/common/
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { authInterceptorFn } from './auth/interceptors/auth.interceptor';
+import { apiBaseInterceptorFn } from './core/interceptors/api-base.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
     provideClientHydration(withEventReplay()),
-    provideHttpClient(withFetch(), withInterceptors([authInterceptorFn])),
+    provideHttpClient(withFetch(), withInterceptors([authInterceptorFn, apiBaseInterceptorFn])),
     provideRouter(routes),
   ]
 };

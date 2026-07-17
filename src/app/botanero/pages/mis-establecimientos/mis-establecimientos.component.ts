@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { BotaneroService } from '../../../services/botanero.service';
-import { EstablecimientoResponseDTO } from '../../../models/establecimiento.model';
+import { BotaneroEstablecimientoDTO } from '../../../models/botanero.model';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
 
 @Component({
@@ -49,7 +49,7 @@ export class MisEstablecimientosComponent implements OnInit {
   private readonly botaneroService = inject(BotaneroService);
   private readonly router = inject(Router);
 
-  establecimientos = signal<EstablecimientoResponseDTO[]>([]);
+  establecimientos = signal<BotaneroEstablecimientoDTO[]>([]);
   cargando = signal(true);
   error = signal<string | null>(null);
 

@@ -1,8 +1,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { BotaneroService } from '../../../services/botanero.service';
-import { BotaneroStatsDTO } from '../../../models/botanero.model';
-import { idEstablecimiento } from '../../../models/establecimiento.model';
+import { BotaneroStatsDTO, BotaneroEstablecimientoDTO } from '../../../models/botanero.model';
 import { listarComentario } from '../../../models/comentario.model';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
 
@@ -76,7 +75,7 @@ export class EstablecimientoDetalleComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly botaneroService = inject(BotaneroService);
 
-  lugar = signal<idEstablecimiento | null>(null);
+  lugar = signal<BotaneroEstablecimientoDTO | null>(null);
   stats = signal<BotaneroStatsDTO | null>(null);
   comentarios = signal<listarComentario[]>([]);
   cargando = signal(true);

@@ -1,10 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ApiResponseBotanero, BotaneroStatsDTO } from '../models/botanero.model';
-import { EstablecimientoResponseDTO, idEstablecimiento, EstablecimientoEditDTO } from '../models/establecimiento.model';
+import { ApiResponseBotanero, BotaneroStatsDTO, BotaneroEstablecimientoDTO, BotaneroPromosDTO } from '../models/botanero.model';
 import { listarComentario } from '../models/comentario.model';
-import { listarPromocionesDTO } from '../models/promocion.model';
 
 /**
  * Servicio del portal de botaneros. Todos los endpoints requieren
@@ -18,20 +16,23 @@ export class BotaneroService {
   private readonly http = inject(HttpClient);
   private readonly API_URL = '/api/botanero/establecimientos';
 
-  listarMisEstablecimientos(): Observable<ApiResponseBotanero<EstablecimientoResponseDTO[]>> {
-    return this.http.get<ApiResponseBotanero<EstablecimientoResponseDTO[]>>(this.API_URL);
+  listarMisEstablecimientos(): Observable<ApiResponseBotanero<BotaneroEstablecimientoDTO[]>> {
+    return this.http.get<ApiResponseBotanero<BotaneroEstablecimientoDTO[]>>(this.API_URL);
   }
 
-  obtenerEstablecimiento(id: number): Observable<ApiResponseBotanero<idEstablecimiento>> {
-    return this.http.get<ApiResponseBotanero<idEstablecimiento>>(`${this.API_URL}/${id}`);
+  obtenerEstablecimiento(id: number): Observable<ApiResponseBotanero<BotaneroEstablecimientoDTO>> {
+    return this.http.get<ApiResponseBotanero<BotaneroEstablecimientoDTO>>(`${this.API_URL}/${id}`);
   }
 
-  editarEstablecimiento(id: number, datos: EstablecimientoEditDTO): Observable<ApiResponseBotanero<idEstablecimiento>> {
-    return this.http.put<ApiResponseBotanero<idEstablecimiento>>(`${this.API_URL}/${id}`, datos);
+  // El backend consume multipart/form-data con las partes "datos" (JSON), "perfil" y "menu".
+  // El FormData se arma en el componente cuando llegue el establecimiento-form compartido (Ma. Fernanda, E2).
+  editarEstablecimiento(id: number, form: FormData): Observable<ApiResponseBotanero<BotaneroEstablecimientoDTO>> {
+    return this.http.put<ApiResponseBotanero<BotaneroEstablecimientoDTO>>(`${this.API_URL}/${id}`, form);
   }
 
-  editarPromos(id: number, promos: listarPromocionesDTO[]): Observable<ApiResponseBotanero<listarPromocionesDTO[]>> {
-    return this.http.put<ApiResponseBotanero<listarPromocionesDTO[]>>(`${this.API_URL}/${id}/promos`, promos);
+  // Ojo: el backend espera un OBJETO BotaneroPromosDTO, no un array.
+  editarPromos(id: number, promos: BotaneroPromosDTO): Observable<ApiResponseBotanero<BotaneroEstablecimientoDTO>> {
+    return this.http.put<ApiResponseBotanero<BotaneroEstablecimientoDTO>>(`${this.API_URL}/${id}/promos`, promos);
   }
 
   listarComentarios(id: number): Observable<ApiResponseBotanero<listarComentario[]>> {
