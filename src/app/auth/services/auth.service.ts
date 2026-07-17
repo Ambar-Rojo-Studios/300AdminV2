@@ -154,7 +154,18 @@ export class AuthService {
     if (!token) return null;
 
     const decodedToken = this.decodificarToken(token);
-    return decodedToken?.role || null;
+    // El backend manda el rol en MAYUSCULAS (ADMIN/BOTANERO/CLIENTE); el front
+    // trabaja con usuario/botanero/cliente. Normalizamos en un solo punto para
+    // que redirect, guards y login components sigan usando su vocabulario.
+    const raw = decodedToken?.role;
+    if (!raw) return null;
+    switch (raw.toUpperCase()) {
+      case 'ADMIN':
+      case 'USUARIO': return 'usuario';
+      case 'BOTANERO': return 'botanero';
+      case 'CLIENTE': return 'cliente';
+      default: return raw;
+    }
   }
 
   obtenerUsuario(): string | null {

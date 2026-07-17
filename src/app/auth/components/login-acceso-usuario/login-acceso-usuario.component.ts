@@ -67,6 +67,8 @@ export class LoginComponent implements OnInit, OnDestroy {
           const userRole = this.authService.obtenerRol();
           if (userRole === 'usuario') {
             this.navigationEvents.openAdminMenu();
+          } else if (userRole === 'botanero') {
+            this.router.navigate(['/mi-lugar']);
           } else {
             this.router.navigate(['/unauthorized']);
           }
