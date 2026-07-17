@@ -1,0 +1,102 @@
+<main class="login-container">
+
+  <section class="image-section" aria-hidden="true">
+    <div class="slideshow">
+      <img src="../../../../assets/img/lugar5.jpg" alt="Vista panorámica de destino turístico 1">
+      <img src="../../../../assets/img/lugar6.jpg" alt="Vista panorámica de destino turístico 2">
+      <img src="../../../../assets/img/lugar7.jpg" alt="Vista panorámica de destino turístico 3">
+      <img src="../../../../assets/img/lugar8.jpg" alt="Vista panorámica de destino turístico 4">
+    </div>
+  </section>
+
+  <section class="form-section">
+    <form class="form-container" [formGroup]="loginForm()" (ngSubmit)="login()" novalidate>
+
+      <header class="login-header">
+        <div class="login-logo">
+          <img src="../../../../assets/img/logo.png" alt="Nombre de tu Empresa - Logo" />
+        </div>
+        <h1 class="login-slogan">Iniciar Sesión</h1>
+      </header>
+
+      <div class="form-grid">
+        <div class="form-group floating-label">
+          <input
+            type="email"
+            id="fldCorreoElectronico"
+            formControlName="fldCorreoElectronico"
+            placeholder=" "
+            autocomplete="email"
+            [class.is-invalid]="email?.invalid && email?.touched"
+            aria-required="true"
+            required
+          />
+          <label for="fldCorreoElectronico">Correo electrónico</label>
+          <div class="email-img" aria-hidden="true"></div>
+        </div>
+
+        @if (email?.invalid && email?.touched) {
+          <div class="invalid-feedback" role="status" aria-live="polite">
+            @if (email?.errors?.['required']) {
+              <small>El correo electrónico es requerido.</small>
+            }
+            @if (email?.errors?.['email']) {
+              <small>Formato inválido de correo.</small>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group floating-label">
+          <input
+            type="password"
+            id="fldContrasenia"
+            formControlName="fldContrasenia"
+            placeholder=" "
+            autocomplete="current-password"
+            [class.is-invalid]="password?.invalid && password?.touched"
+            aria-required="true"
+            required
+          />
+          <label for="fldContrasenia">Contraseña</label>
+          <div class="password-img" aria-hidden="true"></div>
+        </div>
+
+        @if (password?.invalid && password?.touched) {
+          <div class="invalid-feedback" role="status" aria-live="polite">
+            @if (password?.errors?.['required']) {
+              <small>La contraseña es requerida.</small>
+            }
+            @if (password?.errors?.['minlength']) {
+              <small>Mínimo 4 caracteres.</small>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="form-grid">
+        <button type="submit" [disabled]="loginForm().invalid || cargando()" [attr.aria-busy]="cargando()">
+          {{ cargando() ? 'Iniciando sesión...' : 'Ingresar' }}
+        </button>
+      </div>
+
+      <nav class="form_grid_center" aria-label="Opciones de cuenta">
+        <span>¿No tienes una cuenta?</span>
+        <a routerLink="/registro/cliente" class="link-registro">Crear una</a>
+      </nav>
+
+      @if (mensajeError()) {
+        <div class="message error" role="alert">{{ mensajeError() }}</div>
+      }
+      @if (mensajeExito()) {
+        <div class="message success" role="status">{{ mensajeExito() }}</div>
+      }
+
+    </form>
+
+    @if (cargando()) {
+      <app-loading-spinner [overlay]="true" aria-label="Cargando autenticación"></app-loading-spinner>
+    }
+  </section>
+</main>

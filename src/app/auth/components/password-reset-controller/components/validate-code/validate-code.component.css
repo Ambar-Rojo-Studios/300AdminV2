@@ -1,0 +1,110 @@
+
+.page-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: "Roboto", sans-serif;
+}
+
+.validate-code-card {
+  border-radius: 10px;
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+}
+
+.text-validate-code {
+  font-size: 1.7em;
+  color: #2aa8a2;
+  margin-bottom: 2rem;
+  font-weight: 600;
+}
+
+.form-control {
+  position: relative;
+  margin-bottom: 40px;
+}
+
+.form-control input {
+  background-color: transparent;
+  border: 0;
+  border-bottom: 2px solid #ccc;
+  display: block;
+  width: 100%;
+  padding: 15px 0;
+  font-size: 18px;
+  color: #333;
+  outline: none;
+  transition: border-bottom-color 0.3s ease;
+}
+
+.form-control input:focus {
+  border-bottom-color: #a82a3b;
+}
+
+.form-control label {
+  position: absolute;
+  top: 15px;
+  left: 0;
+  pointer-events: none;
+  color: #999;
+}
+
+.form-control label span {
+  display: inline-block;
+  font-size: 18px;
+  min-width: 5px;
+  transition: 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+
+.input-field:focus + .label-email span,
+.input-field:valid + .label-email span {
+  color: #a82a3b;
+  transform: translateY(-30px);
+}
+
+
+.input-field:focus + .label-code span,
+.input-field:valid + .label-code span {
+  color: #2aa8a2;
+  transform: translateY(-30px);
+}
+
+.validate-code-card button {
+  width: 100%;
+  padding: 0.8rem;
+  font-size: 1rem;
+  font-weight: bold;
+  background-color: #a82a3b;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.validate-code-card button:hover:not(:disabled) {
+  background-color: #a82a3b;
+}
+
+.validate-code-card button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.message-text {
+  margin-top: 1rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+.message-text.success {
+  color: green;
+}
+
+.message-text.error {
+  color: red;
+}

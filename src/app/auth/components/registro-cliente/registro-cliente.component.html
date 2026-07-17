@@ -1,0 +1,103 @@
+<main class="create-account-container">
+
+  <aside class="image-section" aria-hidden="true">
+    <div class="slideshow">
+      <img src="../../../../assets/img/lugar1.jpg" alt="Lugar 1">
+      <img src="../../../../assets/img/lugar2.jpg" alt="Lugar 2">
+      <img src="../../../../assets/img/lugar3.jpg" alt="Lugar 3">
+      <img src="../../../../assets/img/lugar4.jpg" alt="Lugar 4">
+    </div>
+  </aside>
+
+  <section class="form-section">
+    <form [formGroup]="clienteForm" (ngSubmit)="enviarCliente()" novalidate>
+
+      <header class="login-logo">
+        <img src="../../../../assets/img/logo.png" alt="Logo" />
+      </header>
+
+      <h2 id="clientes-title">Registro de Cliente</h2>
+
+      <div class="form-grid">
+
+        <div class="form-group floating-label">
+          <input id="crearNombre" formControlName="fldNombre" required placeholder=" " autocomplete="name" />
+          <label for="crearNombre">Nombre *</label>
+          @if (clienteForm.get('fldNombre')?.touched && clienteForm.get('fldNombre')?.hasError('required')) {
+            <span class="error">El nombre es obligatorio.</span>
+          }
+        </div>
+
+        <div class="form-group floating-label">
+          <input id="crearNombreCorto" formControlName="fldNombreCorto" required placeholder=" " />
+          <label for="crearNombreCorto">Nombre Corto *</label>
+          @if (clienteForm.get('fldNombreCorto')?.touched && clienteForm.get('fldNombreCorto')?.hasError('required')) {
+            <span class="error">El nombre corto es obligatorio.</span>
+          }
+        </div>
+
+        <div class="form-group">
+          <label class="static-label">Suscripción Asignada</label>
+          <div class="suscripcion-info">
+            <span>Suscripción por defecto (ID: 1)</span>
+          </div>
+        </div>
+
+        <div class="form-group floating-label">
+          <input id="crearTelefono" formControlName="fldTelefono" type="tel" required placeholder=" " autocomplete="tel" />
+          <label for="crearTelefono">Teléfono *</label>
+          @if (clienteForm.get('fldTelefono')?.touched && clienteForm.get('fldTelefono')?.invalid) {
+            <span class="error">
+              {{ clienteForm.get('fldTelefono')?.hasError('required') ? 'El teléfono es obligatorio.' : 'Formato inválido (10-15 dígitos).' }}
+            </span>
+          }
+        </div>
+
+        <div class="form-group floating-label">
+          <input id="crearCorreo" formControlName="fldCorreoElectronico" type="email" required placeholder=" " autocomplete="email" />
+          <label for="crearCorreo">Correo *</label>
+          @if (clienteForm.get('fldCorreoElectronico')?.touched && clienteForm.get('fldCorreoElectronico')?.invalid) {
+            <span class="error">
+              {{ clienteForm.get('fldCorreoElectronico')?.hasError('required') ? 'El correo es obligatorio.' : 'Ingresa un correo válido.' }}
+            </span>
+          }
+        </div>
+
+        <div class="form-group floating-label">
+          <input id="crearFechaNacimiento" formControlName="fldFechaNacimiento" type="date" required placeholder=" " />
+          <label for="crearFechaNacimiento">Fecha de Nacimiento *</label>
+          @if (clienteForm.get('fldFechaNacimiento')?.touched && clienteForm.get('fldFechaNacimiento')?.hasError('required')) {
+            <span class="error">La fecha es obligatoria.</span>
+          }
+        </div>
+
+        <div class="form-group floating-label">
+          <input id="crearContrasenia" formControlName="fldContrasenia" type="password" required placeholder=" " autocomplete="new-password" />
+          <label for="crearContrasenia">Contraseña *</label>
+          @if (clienteForm.get('fldContrasenia')?.touched && clienteForm.get('fldContrasenia')?.hasError('required')) {
+            <span class="error">La contraseña es obligatoria.</span>
+          }
+        </div>
+
+        <div class="form-group file-upload-group">
+          <label for="crearImagenPerfil">Foto de perfil (Opcional)</label>
+          <input id="crearImagenPerfil" type="file" (change)="onImagenPerfilChange($event)" accept="image/*" />
+          
+          @if (clienteForm.get('fldImagenPerfil')?.value) {
+            <div class="image-preview">
+              <img [src]="'data:image/jpeg;base64,' + clienteForm.get('fldImagenPerfil')?.value" alt="Vista previa" />
+            </div>
+          }
+        </div>
+
+      </div>
+
+      <footer class="form-actions">
+        <button type="submit"  [disabled]="cargando()" class="btn-submit" [disabled]="clienteForm.invalid">
+          Registrar Cliente
+        </button>
+      </footer>
+
+    </form>
+  </section>
+</main>

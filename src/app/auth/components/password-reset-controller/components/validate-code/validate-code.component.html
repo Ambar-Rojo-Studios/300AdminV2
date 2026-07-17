@@ -1,0 +1,51 @@
+<div class="page-container">
+  <div class="validate-code-card">
+    <div class="text-validate-code">
+      Validar la contraseña
+    </div>
+
+    <div class="form-control">
+      <input
+        class="input-field"
+        [(ngModel)]="email"
+        type="email"
+        name="email"
+        id="email-input"
+        required
+      />
+      <label for="email-input" class="label-email">
+        <span style="transition-delay:0ms">E</span>
+        <span style="transition-delay:50ms">m</span>
+        <span style="transition-delay:100ms">a</span>
+        <span style="transition-delay:150ms">i</span>
+        <span style="transition-delay:200ms">l</span>
+      </label>
+    </div>
+
+    <div class="form-control">
+      <input
+        class="input-field"
+        [(ngModel)]="code"
+        type="text"
+        name="code"
+        id="code-input"
+        required
+      />
+      <label for="code-input" class="label-code">
+        <span style="transition-delay:0ms">C</span>
+        <span style="transition-delay:60ms">o</span>
+        <span style="transition-delay:120ms">d</span>
+        <span style="transition-delay:180ms">e</span>
+      </label>
+    </div>
+
+    <button (click)="onValidatePassword()" [disabled]="isLoading || !email">
+      <span *ngIf="!isLoading">Confirmar código</span>
+      <span *ngIf="isLoading">Enviando...</span>
+    </button>
+
+    <p *ngIf="mensaje" class="message-text" [ngClass]="tipoMensaje">
+      {{ mensaje }}
+    </p>
+  </div>
+</div>

@@ -1,0 +1,88 @@
+<section class="login-container">
+
+  <!-- Imagen de bienvenida -->
+  <section class="image-section">
+    <div class="slideshow">
+      <img src="../../../../assets/img/lugar1.jpg" alt="Lugar 1">
+      <img src="../../../../assets/img/lugar2.jpg" alt="Lugar 2">
+      <img src="../../../../assets/img/lugar3.jpg" alt="Lugar 3">
+      <img src="../../../../assets/img/lugar4.jpg" alt="Lugar 4">
+    </div>
+  </section>
+
+  <!-- Formulario de login -->
+  <section class="form-section">
+    <form class="login-form" [formGroup]="loginForm()" (ngSubmit)="login()">
+
+      <!-- LOGO -->
+      <div class="login-logo">
+        <img src="../../../../assets/img/logo.png" alt="Logo" />
+      </div>
+
+      <!-- TÍTULO -->
+      <h2 class="login-slogan">Iniciar Sesión</h2>
+
+      <!-- Correo -->
+      <div class="form-grid">
+        <div class="form-group floating-label">
+          <input type="email" id="fldCorreoElectronico" formControlName="fldCorreoElectronico" placeholder=" " autocomplete="username"
+                 [class.is-invalid]="email?.invalid && email?.touched" required />
+          <label for="fldCorreoElectronico">Correo</label>
+          <div class="email-img"></div>
+        </div>
+
+        @if (email?.invalid && email?.touched) {
+          <div class="invalid-feedback">
+            @if (email?.errors?.['required']) {
+              <div>El correo electrónico es requerido.</div>
+            }
+            @if (email?.errors?.['email']) {
+              <div>Formato inválido de correo.</div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Contraseña -->
+      <div class="form-grid">
+        <div class="form-group floating-label">
+          <input type="password" id="fldContrasenia" formControlName="fldContrasenia" placeholder=" " autocomplete="current-password"
+                 [class.is-invalid]="password?.invalid && password?.touched" required />
+          <label for="fldContrasenia">Contraseña</label>
+          <div class="password-img"></div>
+        </div>
+
+        @if (password?.invalid && password?.touched) {
+          <div class="invalid-feedback">
+            @if (password?.errors?.['required']) {
+              <div>La contraseña es requerida.</div>
+            }
+            @if (password?.errors?.['minlength']) {
+              <div>Mínimo 4 caracteres.</div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Botón de envío -->
+      <div class="form-grid">
+        <button type="submit" [disabled]="loginForm().invalid || cargando()">
+          {{ cargando() ? 'Iniciando sesión...' : 'Ingresar' }}
+        </button>
+      </div>
+
+      <!-- Mensajes -->
+      @if (mensajeError()) {
+        <div class="message error">{{ mensajeError() }}</div>
+      }
+      @if (mensajeExito()) {
+        <div class="message success">{{ mensajeExito() }}</div>
+      }
+    </form>
+  </section>
+
+  <!-- Spinner -->
+  @if (cargando()) {
+    <app-loading-spinner [overlay]="true"></app-loading-spinner>
+  }
+</section>
