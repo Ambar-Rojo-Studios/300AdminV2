@@ -58,6 +58,10 @@ export const routes: Routes = [
       {
         path: '',
         loadComponent: () => import('./botanero/pages/mis-establecimientos/mis-establecimientos.component').then(m => m.MisEstablecimientosComponent)
+      },
+      {
+        path: 'establecimiento/:id',
+        loadComponent: () => import('./botanero/pages/establecimiento-detalle/establecimiento-detalle.component').then(m => m.EstablecimientoDetalleComponent)
       }
     ]
   },
