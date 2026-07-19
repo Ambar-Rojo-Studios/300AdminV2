@@ -1,0 +1,18 @@
+<section class="inicio-page">
+  <header class="inicio-header">
+    <h1>300 Lugares</h1>
+    <p>Descubre establecimientos en el mapa.</p>
+  </header>
+
+  @if (cargando()) {
+    <div class="inicio-loading">Cargando mapa…</div>
+  } @else if (error()) {
+    <div class="inicio-error">{{ error() }}</div>
+  } @else {
+    <app-mapa-establecimiento
+      [establecimientos]="markers()"
+      [height]="'500px'"
+      (markerClick)="irAlDetalle($event)"
+    ></app-mapa-establecimiento>
+  }
+</section>

@@ -1,0 +1,14 @@
+<section class="detalle-page">
+  @if (error()) {
+    <div class="detalle-error">{{ error() }}</div>
+  } @else if (establecimientoId(); as id) {
+    <app-mapa-establecimiento
+      [establecimientoId]="id"
+      [height]="'400px'"
+      (markerClick)="onMarkerClick($event)"
+      (error)="onMapaError($event)"
+    ></app-mapa-establecimiento>
+  } @else {
+    <div class="detalle-loading">Cargando establecimiento…</div>
+  }
+</section>

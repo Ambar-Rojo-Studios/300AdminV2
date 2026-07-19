@@ -1,0 +1,13 @@
+<div class="mapa-fullscreen-wrapper">
+  @if (cargando()) {
+    <div class="mapa-fullscreen-loading">Cargando mapa…</div>
+  } @else if (error()) {
+    <div class="mapa-fullscreen-error">{{ error() }}</div>
+  } @else {
+    <app-mapa-establecimiento
+      [establecimientos]="markers()"
+      [height]="'100vh'"
+      (markerClick)="irAlDetalle($event)"
+    ></app-mapa-establecimiento>
+  }
+</div>

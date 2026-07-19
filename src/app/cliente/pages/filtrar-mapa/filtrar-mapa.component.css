@@ -1,0 +1,13 @@
+.filter-map-wrapper {
+  padding: 1rem;
+  background: #fafafa;
+  border-right: 1px solid #ddd;
+  overflow-y: auto;
+}
+
+.filter-map-placeholder {
+  margin: 0;
+  color: #888;
+  font-size: 0.85rem;
+  font-style: italic;
+}

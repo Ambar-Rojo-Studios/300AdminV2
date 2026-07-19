@@ -1,312 +1,548 @@
-import { Component, AfterViewInit, ViewChild, ElementRef, Input, Output, EventEmitter, signal, PLATFORM_ID, inject, OnDestroy, OnChanges, SimpleChanges, effect } from '@angular/core';
+import {
+  Component,
+  AfterViewInit,
+  OnDestroy,
+  OnChanges,
+  SimpleChanges,
+  ViewChild,
+  ElementRef,
+  Input,
+  Output,
+  EventEmitter,
+  signal,
+  PLATFORM_ID,
+  inject,
+} from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { GoogleMapsLinkExtractorDirective, GoogleMapsCoords } from '../../../utils/google-maps-link-extractor.directive';
+import { Subscription } from 'rxjs';
 
-// Declaración para TypeScript
+import {
+  GoogleMapsLinkExtractorDirective,
+  GoogleMapsCoords,
+} from '../../utils/google-maps-link-extractor.directive';
+import { EstablecimientosService } from '../../../services/establecimientos.service';
+
+// Declaración para TypeScript (cargado via <script> en index.html)
 declare const google: any;
 
 /**
- * Interfaz para las coordenadas del establecimiento
+ * Marcador que el componente sabe pintar en el mapa.
+ *
+ * Nota: `lat`/`lng` son `number` ya parseado. La conversión desde el
+ * string del DTO del backend (fldCoordLatitud / fldCoordLongitud) la
+ * hace el padre o el servicio que llama al componente. Esto evita el
+ * `parseFloat` repetido que v1 hacía en cada variante de mapa.
  */
-export interface MapaEstablecimientoCoords {
+export interface EstablecimientoMarker {
+  id: number;
+  nombre: string;
+  lat: number;
+  lng: number;
+  imagen?: string;
+  direccion?: string;
+}
+
+/**
+ * Coordenadas para el modo selección (form).
+ * String porque el DTO del backend las recibe/expe como string.
+ */
+export interface Coords {
   lat: string;
   lng: string;
 }
 
-/**
- * Opciones de configuración del mapa
- */
-export interface MapaOptions {
-  center?: { lat: number; lng: number };
-  zoom?: number;
-  mapId?: string;
-}
+type ModoMapa = 'ver' | 'seleccionar';
 
 /**
- * Componente standalone para mostrar y gestionar el mapa de establecimientos.
- * Utiliza la API moderna de Google Maps con AdvancedMarkerElement y Signals.
+ * Componente UNIFICADO de mapa que reemplaza a las 5 variantes de v1:
+ *  - cliente/mapa             → [establecimientos]
+ *  - cliente/mapa-con-filtro  → padre externo + [establecimientos] (filtrado)
+ *  - cliente/mapa-filtrado    → [establecimientos] (ya filtrado)
+ *  - cliente/mapa-idEstablecimiento → [establecimientoId] (resuelve vía servicio)
+ *  - shared/mapa-establecimiento (base v1) → modo='seleccionar' + [coords]
+ *
+ * Mutuamente excluyentes: `establecimientos`, `establecimientoId` y
+ * `modo === 'seleccionar' + coords`. Ver {@link validateMode}.
+ *
+ * ssr-safe: en cualquier plataforma que no sea browser no toca Google Maps.
  */
 @Component({
   selector: 'app-mapa-establecimiento',
   standalone: true,
   imports: [CommonModule, FormsModule, GoogleMapsLinkExtractorDirective],
   templateUrl: './mapa-establecimiento.component.html',
-  styleUrls: ['./mapa-establecimiento.component.css']
+  styleUrls: ['./mapa-establecimiento.component.css'],
 })
-export class MapaEstablecimientoComponent implements  AfterViewInit, OnDestroy, OnChanges {
-  
-  // Inyección de dependencias
-  private platformId = inject(PLATFORM_ID);
+export class MapaEstablecimientoComponent
+  implements AfterViewInit, OnDestroy, OnChanges
+{
+  // === Inyección ===
+  private readonly platformId = inject(PLATFORM_ID);
+  /**
+   * Servicio para resolver un establecimiento por id (modo single / híbrido).
+   * `optional: true` permite que el componente se instantiate sin el
+   * servicio (tests, o mientras el esqueleto aún no lo provee). En modo
+   * single sin servicio disponible se emite error vía {@link error}.
+   */
+  private readonly establecimientosService = inject(EstablecimientosService, {
+    optional: true,
+  });
 
-  // === VIEW CHILDREN ===
-  @ViewChild('mapContainer') mapContainer!: ElementRef<HTMLDivElement>;
+  // === ViewChild ===
+  @ViewChild('mapContainer') mapContainerRef?: ElementRef<HTMLDivElement>;
 
-  // === INPUTS ===
-  /** Coordenadas iniciales del establecimiento */
-  @Input() coords: MapaEstablecimientoCoords | null = null;
-  
-  /** Modo del mapa: 'crear' o 'editar' */
-  @Input() modo: 'crear' | 'editar' = 'crear';
-  
-  /** Deshabilitar interacciones */
-  @Input() disabled: boolean = false;
+  // === DATA INPUTS (mutuamente excluyentes) ===
+  @Input() establecimientos?: EstablecimientoMarker[] | null;
+  @Input() establecimientoId: number | null = null;
+  @Input() coords: Coords | null = null;
+
+  // === Comportamiento ===
+  @Input() modo: ModoMapa = 'ver';
+  @Input() disabled = false;
+
+  // === Visual ===
+  @Input() center: { lat: number; lng: number } = { lat: 16.75, lng: -93.1167 };
+  @Input() zoom = 13;
+  @Input() mapId = '4504f8b37365c3d0';
+  @Input() height = '400px';
+  @Input() infoWindow = true;
+  @Input() showLinkInput = false;
 
   // === OUTPUTS ===
-  /** Emite cuando las coordenadas cambian */
-  @Output() coordsChange = new EventEmitter<MapaEstablecimientoCoords>();
-  
-  /** Emite cuando hay un error */
+  @Output() markerClick = new EventEmitter<EstablecimientoMarker>();
+  @Output() coordsChange = new EventEmitter<Coords>();
+  @Output() ready = new EventEmitter<void>();
   @Output() error = new EventEmitter<string>();
-  
-  /** Emite mensajes de éxito */
   @Output() success = new EventEmitter<string>();
 
-  // === SEÑALES (SIGNALS) ===
-  /** Mapa de Google Maps */
-  map = signal<google.maps.Map | null>(null);
-  
-  /** Marcador en el mapa */
-  marker = signal<any | null>(null);
-  
-  /** Enlace de Google Maps */
-  googleMapsLink = signal<string>('');
-  
-  /** Error en la extracción de coordenadas */
-  coordExtractionError = signal<string>('');
-  
-  /** Indica si el mapa está listo */
-  isMapReady = signal(false);
-  
-  /** Indica si está cargando */
-  isLoading = signal(false);
+  // === Signals internos ===
+  readonly map = signal<any | null>(null);
+  readonly markers = signal<any[]>([]);
+  readonly infoWindows = signal<any[]>([]);
+  readonly singleMarker = signal<any | null>(null);
+  readonly isMapReady = signal(false);
+  readonly isLoading = signal(false);
 
-  // === CONFIGURACIÓN ===
-  private readonly defaultCenter = { lat: 16.75, lng: -93.1167 }; // Chiapas
-  private readonly defaultZoom = 12;
-  private readonly mapId = '4504f8b37365c3d0';
+  // === Estado UI del extractor de enlace (modo selección) ===
+  readonly googleMapsLink = signal('');
+  readonly coordExtractionError = signal('');
 
-  constructor() {
-    // Mantiene el marcador sincronizado cuando cambian las coordenadas recibidas.
-    effect(() => {
-      const currentCoords = this.coords;
-      if (currentCoords && this.isMapReady()) {
-        this.updateMarkerFromCoords(currentCoords);
-      }
-    });
+  // === Privados ===
+  private singleSubscription?: Subscription;
+  private destroyed = false;
+
+  // ---------------------------------------------------------------
+  // Lifecycle
+  // ---------------------------------------------------------------
+
+  ngAfterViewInit(): void {
+    this.initMap();
   }
 
-  /** Inicializa el mapa una vez que la vista ya está disponible. */
-  ngAfterViewInit(): Promise<void> {
-    return this.initMap();
-  }
-
-  /** Actualiza la vista del mapa cuando las coordenadas externas cambian. */
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['coords'] && !changes['coords'].firstChange) {
-      if (this.coords && this.isMapReady()) {
-        this.updateMarkerFromCoords(this.coords);
-      }
+    this.validateMode();
+    if (!this.isMapReady()) return;
+
+    if (changes['establecimientos'] && this.establecimientos) {
+      this.renderLista(this.establecimientos);
+    }
+    if (changes['establecimientoId'] && this.establecimientoId != null) {
+      this.renderSingle(this.establecimientoId);
+    }
+    if (changes['coords'] && this.modo === 'seleccionar') {
+      this.renderSeleccion(this.coords);
     }
   }
 
   ngOnDestroy(): void {
-    // Limpiar mapa y marcador al destruir el componente
+    this.destroyed = true;
     this.cleanupMap();
   }
 
-  /**
-   * Inicializa el mapa de Google Maps
-   */
+  // ---------------------------------------------------------------
+  // Init
+  // ---------------------------------------------------------------
+
   private async initMap(): Promise<void> {
-    if (!isPlatformBrowser(this.platformId) || typeof google === 'undefined' || !google.maps) {
-      console.warn('Google Maps no está disponible');
+    if (!isPlatformBrowser(this.platformId)) return;
+    if (typeof google === 'undefined' || !google.maps) {
+      console.warn(
+        '[MapaEstablecimiento] Google Maps no está disponible (posible SSR sin API key)'
+      );
       return;
     }
+    const host = this.mapContainerRef?.nativeElement;
+    if (!host) return;
 
     try {
       await google.maps.importLibrary('maps');
-      
-      const mapOptions: google.maps.MapOptions = {
-        center: this.defaultCenter,
-        zoom: this.defaultZoom,
+      const opts = {
+        center: this.center,
+        zoom: this.zoom,
         mapTypeId: google.maps.MapTypeId.ROADMAP,
         mapId: this.mapId,
         disableDefaultUI: false,
         zoomControl: true,
         mapTypeControl: false,
         streetViewControl: false,
-        fullscreenControl: true
+        fullscreenControl: true,
       };
+      this.map.set(new google.maps.Map(host, opts));
+      this.isMapReady.set(true);
+      this.ready.emit();
 
-      if (this.mapContainer?.nativeElement) {
-        this.map.set(new google.maps.Map(this.mapContainer.nativeElement, mapOptions));
-        this.isMapReady.set(true);
-        
-        // Si hay coordenadas iniciales, mostrar marcador
-        if (this.coords) {
-          this.updateMarkerFromCoords(this.coords);
-        }
-
-        console.log('✅ [MapaEstablecimiento] Mapa inicializado');
+      // Primera renderización según inputs que vengan seteados.
+      if (this.modo === 'seleccionar' && this.coords) {
+        this.renderSeleccion(this.coords);
+      } else if (this.establecimientos?.length) {
+        this.renderLista(this.establecimientos);
+      } else if (this.establecimientoId != null) {
+        this.renderSingle(this.establecimientoId);
       }
-    } catch (error) {
-      console.error('❌ [MapaEstablecimiento] Error al inicializar mapa:', error);
+    } catch (err) {
+      console.error('[MapaEstablecimiento] Error al inicializar mapa:', err);
       this.error.emit('Error al inicializar el mapa');
     }
   }
 
-  /**
-   * Actualiza o crea el marcador en el mapa
-   */
-  private async createOrUpdateMarker(lat: number, lng: number): Promise<void> {
-    if (typeof google === 'undefined' || !google.maps) return;
+  // ---------------------------------------------------------------
+  // Modo lista
+  // ---------------------------------------------------------------
 
-    const currentMap = this.map();
-    if (!currentMap) return;
+  private async renderLista(
+    list: EstablecimientoMarker[] | null | undefined
+  ): Promise<void> {
+    if (this.destroyed) return;
+    const googleMap = this.map();
+    if (!googleMap) return;
+
+    this.clearMarkers();
+
+    const safe = list ?? [];
+    if (safe.length === 0) {
+      googleMap.setCenter(this.center);
+      googleMap.setZoom(this.zoom);
+      return;
+    }
 
     try {
       await google.maps.importLibrary('marker');
+      const { AdvancedMarkerElement, PinElement } = google.maps.marker;
 
-      // Eliminar marcador existente
-      if (this.marker()) {
-        this.marker().map = null;
+      const bounds = new google.maps.LatLngBounds();
+      const newMarkers: any[] = [];
+      const newInfoWindows: any[] = [];
+
+      for (const est of safe) {
+        if (!Number.isFinite(est.lat) || !Number.isFinite(est.lng)) continue;
+
+        const pin = new PinElement({
+          background: 'rgb(255, 51, 51)',
+          glyphColor: 'white',
+          borderColor: 'rgb(255, 51, 51)',
+          scale: 1.5,
+        });
+        const marker = new AdvancedMarkerElement({
+          map: googleMap,
+          position: { lat: est.lat, lng: est.lng },
+          content: pin.element,
+          title: est.nombre,
+        });
+
+        if (this.infoWindow) {
+          const infoWindow = new google.maps.InfoWindow({
+            content: this.buildInfoWindowHtml(est),
+          });
+          marker.addListener('click', () => {
+            infoWindow.open(googleMap, marker);
+            this.triggerMarkerClick(est);
+          });
+          newInfoWindows.push(infoWindow);
+        } else {
+          marker.addListener('click', () => this.triggerMarkerClick(est));
+        }
+
+        newMarkers.push(marker);
+        bounds.extend({ lat: est.lat, lng: est.lng });
       }
 
-      // Crear nuevo marcador avanzado
-      const newMarker = new google.maps.marker.AdvancedMarkerElement({
-        map: currentMap,
-        position: { lat, lng },
-        title: 'Establecimiento',
-        gmpDraggable: true
-      });
+      this.markers.set(newMarkers);
+      this.infoWindows.set(newInfoWindows);
 
-      // Hacer el marcador arrastrable
-      newMarker.addListener('dragend', (event: any) => {
-        const position = event.latLng;
-        if (position) {
-          const coords: MapaEstablecimientoCoords = {
-            lat: position.lat().toString(),
-            lng: position.lng().toString()
-          };
-          this.coordsChange.emit(coords);
-          this.updateCoordsInput(coords);
-        }
-      });
-
-      this.marker.set(newMarker);
-      
-      // Centrar el mapa en el marcador
-      currentMap.setCenter({ lat, lng });
-      currentMap.setZoom(15);
-
-    } catch (error) {
-      console.error('❌ [MapaEstablecimiento] Error al crear marcador:', error);
+      googleMap.fitBounds(bounds);
+    } catch (err) {
+      console.error('[MapaEstablecimiento] renderLista error:', err);
+      this.error.emit('Error al renderizar marcadores');
     }
   }
 
-  /**
-   * Actualiza el marcador desde las coordenadas
-   */
-  private updateMarkerFromCoords(coords: MapaEstablecimientoCoords | null): void {
-    if (!coords || !this.isValidNumber(coords.lat) || !this.isValidNumber(coords.lng)) return;
+  // ---------------------------------------------------------------
+  // Modo single (resolver por id)
+  // ---------------------------------------------------------------
+
+  private renderSingle(id: number): void {
+    if (this.destroyed) return;
+    if (!this.establecimientosService) {
+      this.error.emit('EstablecimientosService no disponible para resolver el id');
+      console.warn('[MapaEstablecimiento] establecimientosService no inyectado');
+      return;
+    }
+    const googleMap = this.map();
+    if (!googleMap) return;
+
+    this.clearMarkers();
+    this.singleSubscription?.unsubscribe();
+    this.isLoading.set(true);
+
+    this.singleSubscription = this.establecimientosService
+      .obtenerIdPorEstablecimiento(id)
+      .subscribe({
+        next: (res: any) => {
+          const est = res?.cuerpoDeRespuesta;
+          if (!est) {
+            this.error.emit('Respuesta vacía del servicio');
+            return;
+          }
+          const lat = parseFloat(est.fldCoordLatitud);
+          const lng = parseFloat(est.fldCoordLongitud);
+          if (Number.isNaN(lat) || Number.isNaN(lng)) {
+            this.error.emit('El establecimiento no tiene coordenadas válidas.');
+            return;
+          }
+          const marker: EstablecimientoMarker = {
+            id,
+            nombre: est.fldNombre ?? '',
+            lat,
+            lng,
+            imagen: est.fldImgRefs,
+            direccion: est.fldDireccion,
+          };
+          this.dropSingleMarker(marker, /*centerWithBounds*/ true);
+        },
+        error: (err: any) => {
+          console.error('[MapaEstablecimiento] renderSingle error:', err);
+          this.error.emit('Error al obtener el establecimiento por id');
+        },
+      });
+  }
+
+  // ---------------------------------------------------------------
+  // Modo selección (form)
+  // ---------------------------------------------------------------
+
+  private async renderSeleccion(coords: Coords | null): Promise<void> {
+    if (this.destroyed) return;
+    const googleMap = this.map();
+    if (!googleMap || !coords) return;
 
     const lat = parseFloat(coords.lat);
     const lng = parseFloat(coords.lng);
+    if (Number.isNaN(lat) || Number.isNaN(lng)) return;
 
-    if (!isNaN(lat) && !isNaN(lng)) {
-      this.createOrUpdateMarker(lat, lng);
-    }
+    const marker: EstablecimientoMarker = {
+      id: 0,
+      nombre: 'Establecimiento',
+      lat,
+      lng,
+    };
+    this.dropSingleMarker(marker, false, /*draggable*/ true);
   }
 
+  // ---------------------------------------------------------------
+  // Helpers de marker único
+  // ---------------------------------------------------------------
+
+  private async dropSingleMarker(
+    marker: EstablecimientoMarker,
+    centerWithBounds: boolean,
+    draggable = false
+  ): Promise<void> {
+    if (this.destroyed) return;
+    const googleMap = this.map();
+    if (!googleMap) return;
+
+    try {
+      this.clearMarkers();
+      await google.maps.importLibrary('marker');
+      const { AdvancedMarkerElement, PinElement } = google.maps.marker;
+
+      const pin = new PinElement({
+        background: 'rgb(255, 51, 51)',
+        glyphColor: 'white',
+        borderColor: 'rgb(255, 51, 51)',
+        scale: 1.5,
+      });
+      const gMarker = new AdvancedMarkerElement({
+        map: googleMap,
+        position: { lat: marker.lat, lng: marker.lng },
+        content: pin.element,
+        title: marker.nombre,
+        gmpDraggable: draggable,
+      });
+
+      if (this.infoWindow) {
+        const infoWindow = new google.maps.InfoWindow({
+          content: this.buildInfoWindowHtml(marker),
+        });
+        gMarker.addListener('click', () => {
+          infoWindow.open(googleMap, gMarker);
+          this.triggerMarkerClick(marker);
+        });
+        this.infoWindows.set([infoWindow]);
+      } else {
+        gMarker.addListener('click', () => this.triggerMarkerClick(marker));
+      }
+
+      if (draggable) {
+        gMarker.addListener('dragend', (event: any) => {
+          const position = event?.latLng;
+          if (!position) return;
+          const newCoords: Coords = {
+            lat: position.lat().toString(),
+            lng: position.lng().toString(),
+          };
+          this.coordsChange.emit(newCoords);
+        });
+      }
+
+      this.singleMarker.set(gMarker);
+
+      if (centerWithBounds) {
+        const bounds = new google.maps.LatLngBounds();
+        bounds.extend({ lat: marker.lat, lng: marker.lng });
+        googleMap.fitBounds(bounds);
+        googleMap.setZoom(16);
+      } else {
+        googleMap.setCenter({ lat: marker.lat, lng: marker.lng });
+        googleMap.setZoom(15);
+      }
+    } catch (err) {
+      console.error('[MapaEstablecimiento] dropSingleMarker error:', err);
+      this.error.emit('Error al crear el marcador');
+    }
+    this.isLoading.set(false);
+  }
+
+  // ---------------------------------------------------------------
+  // InfoWindow HTML
+  // ---------------------------------------------------------------
+
+  private buildInfoWindowHtml(est: EstablecimientoMarker): string {
+    const img = est.imagen
+      ? `<img src="${est.imagen}" alt="${this.escapeHtml(est.nombre)}" style="width:100px;height:100px;object-fit:cover;border-radius:8px;"><br>`
+      : '';
+    return `<div style="font-family: Arial; font-size: 14px;">
+      ${img}
+      <strong>${this.escapeHtml(est.nombre)}</strong><br>
+      ${this.escapeHtml(est.direccion ?? '')}
+    </div>`;
+  }
+
+  private escapeHtml(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  // ---------------------------------------------------------------
+  // Handlers públicos del extractor de enlace (modo selección)
+  // ---------------------------------------------------------------
+
   /**
-   * Maneja el cambio en el enlace de Google Maps
+   * Dispara manualmente {@link markerClick}. Útil tanto para tests
+   * (no requieren Google Maps) como para que un padre pueda emular un
+   * click programáticamente si lo necesita.
    */
+  triggerMarkerClick(est: EstablecimientoMarker): void {
+    this.markerClick.emit(est);
+  }
+
   onGoogleMapsLinkChange(value: string): void {
     this.googleMapsLink.set(value);
-    if (value) {
-      this.coordExtractionError.set('');
-    }
+    if (value) this.coordExtractionError.set('');
   }
 
-  /**
-   * Maneja las coordenadas extraídas por el directive
-   */
   async onCoordsExtracted(coords: GoogleMapsCoords): Promise<void> {
-    const mappedCoords: MapaEstablecimientoCoords = {
-      lat: coords.lat,
-      lng: coords.lng
-    };
-
-    // Emitir coordenadas al padre
-    this.coordsChange.emit(mappedCoords);
-    
-    // Actualizar input visual
+    this.coordsChange.emit(coords);
     this.googleMapsLink.set('');
-    this.updateCoordsInput(mappedCoords);
-    
-    // Actualizar marcador en el mapa
-    await this.createOrUpdateMarker(parseFloat(coords.lat), parseFloat(coords.lng));
-    
+    await this.renderSeleccion(coords);
     this.success.emit(`Coordenadas extraídas: ${coords.lat}, ${coords.lng}`);
   }
 
-  /**
-   * Maneja errores del directive de extracción
-   */
-  onCoordError(errorMessage: string): void {
-    this.coordExtractionError.set(errorMessage);
-    this.error.emit(errorMessage);
+  onCoordError(msg: string): void {
+    this.coordExtractionError.set(msg);
+    this.error.emit(msg);
   }
 
-  /**
-   * Maneja mensajes de éxito del directive
-   */
-  onCoordSuccess(message: string): void {
-    this.success.emit(message);
+  onCoordSuccess(msg: string): void {
+    this.success.emit(msg);
   }
 
-  /**
-   * Actualiza los inputs de coordenadas
-   */
-  private updateCoordsInput(coords: MapaEstablecimientoCoords): void {
-    // Actualizar directamente los elementos del DOM
-    const latInput = document.getElementById('mapaCoordLat') as HTMLInputElement;
-    const lngInput = document.getElementById('mapaCoordLng') as HTMLInputElement;
-    
-    if (latInput) latInput.value = coords.lat;
-    if (lngInput) lngInput.value = coords.lng;
-  }
+  // ---------------------------------------------------------------
+  // Validaciones de modo
+  // ---------------------------------------------------------------
 
-  /**
-   * Valida si un valor es un número válido
-   */
-  private isValidNumber(value: string | null | undefined): boolean {
-    if (value === null || typeof value === 'undefined' || value.trim() === '') return false;
-    const regex = /^-?\d*\.?\d+$/;
-    return regex.test(value);
-  }
-
-  /**
-   * Limpia el mapa y marcador al destruir el componente
-   */
-  private cleanupMap(): void {
-    if (this.marker()) {
-      this.marker().map = null;
+  private validateMode(): void {
+    if (this.establecimientos?.length && this.establecimientoId != null) {
+      this.error.emit(
+        'No se puede pasar establecimientos y establecimientoId a la vez'
+      );
+      return;
     }
-    this.marker.set(null);
+    if (this.modo === 'seleccionar' && this.establecimientos?.length) {
+      console.warn(
+        '[MapaEstablecimiento] modo=seleccionar con establecimientos: ignorando establecimientos'
+      );
+      this.establecimientos = null;
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // Limpieza
+  // ---------------------------------------------------------------
+
+  private clearMarkers(): void {
+    for (const m of this.markers()) m.map = null;
+    this.markers.set([]);
+    for (const w of this.infoWindows()) {
+      try {
+        w.close();
+      } catch {}
+    }
+    this.infoWindows.set([]);
+
+    const sm = this.singleMarker();
+    if (sm) {
+      sm.map = null;
+      this.singleMarker.set(null);
+    }
+  }
+
+  private cleanupMap(): void {
+    this.clearMarkers();
+    this.singleSubscription?.unsubscribe();
+    const m = this.map();
+    if (m) {
+      try {
+        google.maps.event.clearInstanceListeners(m);
+      } catch {}
+    }
     this.map.set(null);
     this.isMapReady.set(false);
   }
 
-  /**
-   * Fuerza el redimensionamiento del mapa
-   */
+  // ---------------------------------------------------------------
+  // Util pública (para padres que quieran forzar resize)
+  // ---------------------------------------------------------------
+
   resizeMap(): void {
-    const currentMap = this.map();
-    if (currentMap) {
-      google.maps.event.trigger(currentMap, 'resize');
+    const m = this.map();
+    if (m) {
+      google.maps.event.trigger(m, 'resize');
     }
   }
 }
-

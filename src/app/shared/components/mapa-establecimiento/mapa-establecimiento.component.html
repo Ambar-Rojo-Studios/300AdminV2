@@ -1,104 +1,106 @@
 <section class="mapa-establecimiento-container">
-  
-  <!-- Sección de Coordenadas y Enlace de Google Maps -->
-  <div class="coords-section">
-    <div class="form-group">
-      <label for="mapaCoordLat">Latitud</label>
-      <input 
-        type="text" 
-        id="mapaCoordLat" 
-        name="lat" 
-        [ngModel]="coords?.lat || ''"
-        placeholder="e.j. 16.7528" 
-        disabled 
-        class="coord-input"
-      />
-    </div>
 
-    <div class="form-group">
-      <label for="mapaCoordLng">Longitud</label>
-      <input 
-        type="text" 
-        id="mapaCoordLng" 
-        name="lng" 
-        [ngModel]="coords?.lng || ''"
-        placeholder="e.j. -93.1160" 
-        disabled 
-        class="coord-input"
-      />
-    </div>
-
-    <div class="form-group link-section">
-      <label for="googleMapsLink">Enlace de Google Maps</label>
-      <div class="input-with-button">
-        <input 
-          type="text" 
-          id="googleMapsLink" 
-          name="googleMapsLink"
-          [ngModel]="googleMapsLink()"
-          (ngModelChange)="onGoogleMapsLinkChange($event)"
-          placeholder="Pega el enlace largo de Google Maps aquí"
-          [disabled]="disabled"
+  @if (modo === 'seleccionar' && showLinkInput) {
+    <!-- Sección de Coordenadas y Enlace de Google Maps (solo modo selección) -->
+    <div class="coords-section">
+      <div class="form-group">
+        <label for="mapaCoordLat_{{ modo }}">Latitud</label>
+        <input
+          type="text"
+          id="mapaCoordLat_{{ modo }}"
+          name="lat"
+          [ngModel]="coords?.lat || ''"
+          placeholder="e.j. 16.7528"
+          disabled
+          class="coord-input"
         />
-        <button 
-          type="button" 
-          class="btn--secondary btn-sm"
-          appGoogleMapsLinkExtractor
-          [googleMapsLink]="googleMapsLink()"
-          (coordsExtracted)="onCoordsExtracted($event)"
-          (error)="onCoordError($event)"
-          (success)="onCoordSuccess($event)"
-          [disabled]="!googleMapsLink() || disabled"
-        >
-          @if (isLoading()) {
-            <span class="loading-spinner-sm"></span>
-          } @else {
-            Extraer
-          }
-        </button>
       </div>
-      
-      @if (coordExtractionError()) {
-        <div class="short-link-error">
-          <i class="fas fa-exclamation-triangle"></i>
-          <div class="error-content">
-            <strong>Enlace corto detectado</strong>
-            <p>{{ coordExtractionError() }}</p>
-            <p class="help-text">
-              <i class="fas fa-info-circle"></i>
-              <strong>Cómo obtener un enlace largo:</strong>
-            </p>
-            <ol>
-              <li>Abre Google Maps en tu navegador</li>
-              <li>Busca la ubicación del establecimiento</li>
-              <li>Haz clic en "Compartir" → "Copiar enlace"</li>
-              <li>Pega el enlace aquí (debe contener "&#64;" seguido de coordenadas)</li>
-            </ol>
-          </div>
+
+      <div class="form-group">
+        <label for="mapaCoordLng_{{ modo }}">Longitud</label>
+        <input
+          type="text"
+          id="mapaCoordLng_{{ modo }}"
+          name="lng"
+          [ngModel]="coords?.lng || ''"
+          placeholder="e.j. -93.1160"
+          disabled
+          class="coord-input"
+        />
+      </div>
+
+      <div class="form-group link-section">
+        <label for="googleMapsLink_{{ modo }}">Enlace de Google Maps</label>
+        <div class="input-with-button">
+          <input
+            type="text"
+            id="googleMapsLink_{{ modo }}"
+            name="googleMapsLink"
+            [ngModel]="googleMapsLink()"
+            (ngModelChange)="onGoogleMapsLinkChange($event)"
+            placeholder="Pega el enlace largo de Google Maps aquí"
+            [disabled]="disabled"
+          />
+          <button
+            type="button"
+            class="btn--secondary btn-sm"
+            appGoogleMapsLinkExtractor
+            [googleMapsLink]="googleMapsLink()"
+            (coordsExtracted)="onCoordsExtracted($event)"
+            (error)="onCoordError($event)"
+            (success)="onCoordSuccess($event)"
+            [disabled]="!googleMapsLink() || disabled"
+          >
+            @if (isLoading()) {
+              <span class="loading-spinner-sm"></span>
+            } @else {
+              Extraer
+            }
+          </button>
         </div>
-      }
+
+        @if (coordExtractionError()) {
+          <div class="short-link-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div class="error-content">
+              <strong>Enlace corto detectado</strong>
+              <p>{{ coordExtractionError() }}</p>
+              <p class="help-text">
+                <i class="fas fa-info-circle"></i>
+                <strong>Cómo obtener un enlace largo:</strong>
+              </p>
+              <ol>
+                <li>Abre Google Maps en tu navegador</li>
+                <li>Busca la ubicación del establecimiento</li>
+                <li>Haz clic en "Compartir" → "Copiar enlace"</li>
+                <li>Pega el enlace aquí (debe contener "@@" seguido de coordenadas)</li>
+              </ol>
+            </div>
+          </div>
+        }
+      </div>
     </div>
-  </div>
+  }
 
   <!-- Contenedor del Mapa -->
   <div class="map-section">
-    <div class="map-container">
+    <div class="map-container" [style.height]="height">
       <div #mapContainer id="map-{{ modo }}" class="map-container-inner"></div>
-      
+
       @if (!isMapReady()) {
         <div class="map-loading">
           <div class="loading-spinner"></div>
           <span>Cargando mapa...</span>
         </div>
       }
-      
-      <!-- Instrucciones overlay -->
-      <div class="map-instructions">
-        <i class="fas fa-info-circle"></i>
-        <span>Arrastra el marcador para ajustar la ubicación</span>
-      </div>
+
+      @if (modo === 'seleccionar') {
+        <div class="map-instructions">
+          <i class="fas fa-info-circle"></i>
+          <span>Arrastra el marcador para ajustar la ubicación</span>
+        </div>
+      }
     </div>
   </div>
 
 </section>
-

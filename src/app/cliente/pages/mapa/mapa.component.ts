@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -10,30 +10,25 @@ import {
 import { EstablecimientosPublicService } from '../../../services/establecimientos-public.service';
 
 /**
- * Pantalla `/inicio` del sitio público.
+ * Pantalla `/mapa` del sitio público — variante fullscreen del inicio.
  *
- * Orquesta datos y renderiza el mapa unificado en modo "lista":
- *   - Carga todos los establecimientos públicos (página 1, tamaño 100).
- *   - Pasa al mapa `EstablecimientoMarker[]` (lat/lng ya number).
- *   - En `markerClick` navega a `/detalleEstablecimiento/:id`.
- *
- * No contiene carrusel ni otros componentes del v1 `inicio` — esos se
- * agregan en otra iteración. Esta Fase 2 solo prueba el mapa integrado.
+ * Carga la misma lista que `InicioComponent` y renderiza el mapa ocupando
+ * toda la viewport. Tip: si la lógica de carga crece, extraer a un
+ * `EstablecimientosStore` compartido; para v2 basta duplicar la carga
+ * mínima en dos wrappers (KISS).
  */
 @Component({
-  selector: 'app-inicio',
+  selector: 'app-mapa-page',
   standalone: true,
   imports: [CommonModule, MapaEstablecimientoComponent],
-  templateUrl: './inicio.component.html',
+  templateUrl: './mapa.component.html',
+  styleUrls: ['./mapa.component.css'],
 })
-export class InicioComponent implements OnInit {
+export class MapaComponent implements OnInit, OnDestroy {
   private readonly publicService = inject(EstablecimientosPublicService);
   private readonly router = inject(Router);
 
-  /** Lista de marcadores ya parseada (lat/lng number). */
   readonly markers = signal<EstablecimientoMarker[]>([]);
-
-  /** Estado de carga y error para mostrar UI mínima. */
   readonly cargando = signal(true);
   readonly error = signal<string | null>(null);
 
@@ -49,14 +44,17 @@ export class InicioComponent implements OnInit {
           this.cargando.set(false);
         },
         error: (err) => {
-          console.error('[Inicio] error cargando establecimientos:', err);
+          console.error('[Mapa] error cargando establecimientos:', err);
           this.error.set('No se pudieron cargar los establecimientos.');
           this.cargando.set(false);
         },
       });
   }
 
-  /** Convierte el DTO crudo del backend a `EstablecimientoMarker`. */
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
+  }
+
   private mapear(list: any[]): EstablecimientoMarker[] {
     return list
       .map((est) => {
@@ -75,7 +73,6 @@ export class InicioComponent implements OnInit {
       .filter((x): x is EstablecimientoMarker => x !== null);
   }
 
-  /** Click en marcador → navega al detalle. */
   irAlDetalle(est: EstablecimientoMarker): void {
     this.router.navigate(['/detalleEstablecimiento', est.id]);
   }
