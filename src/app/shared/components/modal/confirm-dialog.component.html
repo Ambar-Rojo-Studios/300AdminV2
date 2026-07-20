@@ -1,0 +1,28 @@
+<app-modal
+  [open]="open()"
+  [title]="title()"
+  size="sm"
+  (closed)="onModalClosed()"
+>
+  <p>
+    {{ message() }}
+    @if (itemName()) {
+      <strong> {{ itemName() }}</strong>
+    }
+    ?
+  </p>
+
+  <ng-container modal-footer>
+    <button type="button" class="btn-secondary" (click)="cancel.emit()">
+      {{ cancelText() }}
+    </button>
+    <button
+      type="button"
+      class="btn-danger"
+      [disabled]="loading()"
+      (click)="confirm.emit()"
+    >
+      {{ loading() ? 'Eliminando...' : confirmText() }}
+    </button>
+  </ng-container>
+</app-modal>

@@ -1,0 +1,98 @@
+<section class="admin-page">
+  <div class="header-actions">
+    <h2>Empresas</h2>
+    <button type="button" class="create-btn" aria-label="Crear empresa" title="Crear empresa" (click)="abrirModalCrear()">
+      <i class="fa fa-plus" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <app-data-table
+    [columns]="columns"
+    [data]="empresasOrdenadas()"
+    [loading]="isLoading()"
+    emptyMessage="No hay empresas para mostrar."
+    [currentPage]="currentPage()"
+    [totalPages]="totalPages()"
+    [sortKey]="sortKey()"
+    [sortDirection]="sortDirection()"
+    (pageChange)="onPageChange($event)"
+    (sortChange)="onSortChange($event)"
+  >
+    <ng-template let-row>
+      <button type="button" class="edit-btn" [attr.aria-label]="'Editar ' + row.fldNombre" (click)="abrirModalEditar(row)">
+        <i class="fas fa-edit" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="delete-btn" [attr.aria-label]="'Eliminar ' + row.fldNombre" (click)="abrirModalEliminar(row)">
+        <i class="fas fa-trash" aria-hidden="true"></i>
+      </button>
+    </ng-template>
+  </app-data-table>
+
+  <app-modal [open]="showFormModal()" [title]="modalTitle()" (closed)="cerrarModalFormulario()">
+    <form #empresaForm="ngForm" (ngSubmit)="onSubmit(empresaForm)" id="empresaForm">
+      <app-text-field
+        label="Nombre"
+        name="fldNombre"
+        [(ngModel)]="empresa().fldNombre"
+        [required]="true"
+      ></app-text-field>
+
+      <app-text-field
+        label="Teléfono"
+        name="fldTelefono"
+        [(ngModel)]="empresa().fldTelefono"
+        [required]="true"
+      ></app-text-field>
+
+      <app-text-field
+        label="Correo"
+        type="email"
+        name="fldCorreoElectronico"
+        [(ngModel)]="empresa().fldCorreoElectronico"
+        [required]="true"
+      ></app-text-field>
+
+      <app-text-field
+        label="Estado"
+        name="fldEstado"
+        [(ngModel)]="empresa().fldEstado"
+      ></app-text-field>
+
+      <app-text-field
+        label="Ciudad"
+        name="fldCiudad"
+        [(ngModel)]="empresa().fldCiudad"
+      ></app-text-field>
+
+      <app-text-field
+        label="Dirección"
+        name="fldDireccion"
+        [(ngModel)]="empresa().fldDireccion"
+      ></app-text-field>
+
+      <app-textarea-field
+        label="Descripción"
+        name="fldDescripcion"
+        [rows]="3"
+        [(ngModel)]="empresa().fldDescripcion"
+      ></app-textarea-field>
+    </form>
+
+    <ng-container modal-footer>
+      <button type="button" class="btn-secondary" (click)="cerrarModalFormulario()" [disabled]="isSaving()">Cancelar</button>
+      <button type="submit" form="empresaForm" class="btn-primary" [disabled]="empresaForm.invalid || isSaving()">
+        {{ isSaving() ? 'Guardando...' : (modalMode() === 'edit' ? 'Actualizar' : 'Guardar') }}
+      </button>
+    </ng-container>
+  </app-modal>
+
+  <app-confirm-dialog
+    [open]="showDeleteModal()"
+    title="Confirmar Eliminación"
+    message="¿Seguro que deseas eliminar la empresa"
+    [itemName]="empresaAEliminar()?.fldNombre ?? null"
+    [loading]="isDeleting()"
+    (confirm)="confirmarEliminar()"
+    (cancel)="cerrarModalEliminar()"
+  ></app-confirm-dialog>
+</section>
