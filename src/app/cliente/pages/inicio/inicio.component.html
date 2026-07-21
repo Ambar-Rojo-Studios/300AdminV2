@@ -1,18 +1,30 @@
-<section class="inicio-page">
-  <header class="inicio-header">
-    <h1>300 Lugares</h1>
-    <p>Descubre establecimientos en el mapa.</p>
-  </header>
-
+<section class="inicio">
   @if (cargando()) {
-    <div class="inicio-loading">Cargando mapa…</div>
+    <div class="inicio__loading">Cargando…</div>
   } @else if (error()) {
-    <div class="inicio-error">{{ error() }}</div>
+    <div class="inicio__error">{{ error() }}</div>
   } @else {
-    <app-mapa-establecimiento
-      [establecimientos]="markers()"
-      [height]="'500px'"
-      (markerClick)="irAlDetalle($event)"
-    ></app-mapa-establecimiento>
+    <section class="inicio__hero">
+      <app-carrusel-establecimientos
+        [data]="carrusel()"
+      ></app-carrusel-establecimientos>
+    </section>
+
+    <section class="inicio__cards">
+      <h2 class="inicio__section-title">Establecimientos destacados</h2>
+      <app-card-establecimiento
+        [establecimientos]="establecimientos()"
+        (cardClick)="irAlDetalle($event)"
+      ></app-card-establecimiento>
+    </section>
+
+    <section class="inicio__mapa">
+      <h2 class="inicio__section-title">Ubicación en el mapa</h2>
+      <app-mapa-establecimiento
+        [establecimientos]="markers()"
+        [height]="'420px'"
+        (markerClick)="irAlDetalle($event)"
+      ></app-mapa-establecimiento>
+    </section>
   }
 </section>

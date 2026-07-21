@@ -1,82 +1,78 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 
+import { CarruselEstablecimientosComponent } from '../../components/carrusel-establecimientos/carrusel-establecimientos.component';
+import { CardEstablecimientoComponent } from '../../components/card-establecimiento/card-establecimiento.component';
 import {
   MapaEstablecimientoComponent,
   EstablecimientoMarker,
 } from '../../../shared/components/mapa-establecimiento';
 import { EstablecimientosPublicService } from '../../../services/establecimientos-public.service';
+import { EstablecimientoListDTO } from '../../../models/establecimiento.model';
 
-/**
- * Pantalla `/inicio` del sitio público.
- *
- * Orquesta datos y renderiza el mapa unificado en modo "lista":
- *   - Carga todos los establecimientos públicos (página 1, tamaño 100).
- *   - Pasa al mapa `EstablecimientoMarker[]` (lat/lng ya number).
- *   - En `markerClick` navega a `/detalleEstablecimiento/:id`.
- *
- * No contiene carrusel ni otros componentes del v1 `inicio` — esos se
- * agregan en otra iteración. Esta Fase 2 solo prueba el mapa integrado.
- */
 @Component({
   selector: 'app-inicio',
   standalone: true,
-  imports: [CommonModule, MapaEstablecimientoComponent],
+  imports: [
+    CommonModule,
+    CarruselEstablecimientosComponent,
+    CardEstablecimientoComponent,
+    MapaEstablecimientoComponent,
+  ],
   templateUrl: './inicio.component.html',
 })
 export class InicioComponent implements OnInit {
   private readonly publicService = inject(EstablecimientosPublicService);
   private readonly router = inject(Router);
+  private readonly platformId = inject(PLATFORM_ID);
 
-  /** Lista de marcadores ya parseada (lat/lng number). */
+  readonly establecimientos = signal<EstablecimientoListDTO[]>([]);
+  readonly carrusel = signal<EstablecimientoListDTO[]>([]);
   readonly markers = signal<EstablecimientoMarker[]>([]);
-
-  /** Estado de carga y error para mostrar UI mínima. */
   readonly cargando = signal(true);
   readonly error = signal<string | null>(null);
 
-  private sub?: Subscription;
-
-  ngOnInit(): void {
-    this.sub = this.publicService
-      .obtenerEstablecimientosPublicos(1, 100)
-      .subscribe({
-        next: (res: any) => {
-          const list = (res?.cuerpoDeRespuesta ?? []) as any[];
-          this.markers.set(this.mapear(list));
-          this.cargando.set(false);
-        },
-        error: (err) => {
-          console.error('[Inicio] error cargando establecimientos:', err);
-          this.error.set('No se pudieron cargar los establecimientos.');
-          this.cargando.set(false);
-        },
-      });
+  async ngOnInit(): Promise<void> {
+    try {
+      const res: any = await firstValueFrom(
+        this.publicService.obtenerEstablecimientosPublicos(1, 100)
+      );
+      const list = (res?.cuerpoDeRespuesta ?? []) as EstablecimientoListDTO[];
+      this.establecimientos.set(list);
+      this.carrusel.set(list.slice(0, 6));
+      this.markers.set(this.mapear(list));
+    } catch (e) {
+      console.error('[Inicio] error cargando establecimientos:', e);
+      this.error.set('No se pudieron cargar los establecimientos.');
+    } finally {
+      this.cargando.set(false);
+    }
   }
 
-  /** Convierte el DTO crudo del backend a `EstablecimientoMarker`. */
-  private mapear(list: any[]): EstablecimientoMarker[] {
+  private mapear(list: EstablecimientoListDTO[]): EstablecimientoMarker[] {
     return list
       .map((est) => {
-        const lat = parseFloat(est.fldCoordLatitud);
-        const lng = parseFloat(est.fldCoordLongitud);
+        const lat = parseFloat(est.fldCoordLatitud ?? '');
+        const lng = parseFloat(est.fldCoordLongitud ?? '');
         if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
         return {
           id: est.idEstablecimiento,
           nombre: est.fldNombre ?? '',
           lat,
           lng,
-          imagen: est.fldImgRefs,
-          direccion: est.fldDireccion,
+          imagen: est.fldImgRefs ?? undefined,
+          direccion: est.fldDireccion ?? undefined,
         } as EstablecimientoMarker;
       })
       .filter((x): x is EstablecimientoMarker => x !== null);
   }
 
-  /** Click en marcador → navega al detalle. */
-  irAlDetalle(est: EstablecimientoMarker): void {
-    this.router.navigate(['/detalleEstablecimiento', est.id]);
+  irAlDetalle(est: EstablecimientoMarker | EstablecimientoListDTO): void {
+    const id = 'id' in est
+      ? (est as EstablecimientoMarker).id
+      : (est as EstablecimientoListDTO).idEstablecimiento;
+    this.router.navigate(['/detalleEstablecimiento', id]);
   }
 }
