@@ -1,0 +1,25 @@
+<div class="form-group">
+  @if (label()) {
+    <label [for]="id()">
+      {{ label() }}
+      @if (required()) {
+        <span class="required">*</span>
+      }
+    </label>
+  }
+
+  <input
+    [id]="id()"
+    [type]="type()"
+    [placeholder]="placeholder()"
+    [value]="value()"
+    [disabled]="disabled()"
+    [class.is-invalid]="invalid()"
+    (input)="handleInput($event)"
+    (blur)="handleBlur()"
+  />
+
+  @if (invalid() && errorMessage()) {
+    <div class="invalid-feedback">{{ errorMessage() }}</div>
+  }
+</div>

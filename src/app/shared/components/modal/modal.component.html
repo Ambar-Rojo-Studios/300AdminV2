@@ -1,0 +1,31 @@
+@if (open()) {
+  <div class="modal-overlay" (click)="onOverlayClick()">
+    <div
+      class="modal-content"
+      [style.maxWidth]="maxWidth"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="title() || null"
+      (click)="$event.stopPropagation()"
+    >
+      @if (title() || showCloseButton()) {
+        <div class="modal-header">
+          <h2>{{ title() }}</h2>
+          @if (showCloseButton()) {
+            <button type="button" class="close-modal" (click)="requestClose()" aria-label="Cerrar">
+              &times;
+            </button>
+          }
+        </div>
+      }
+
+      <div class="modal-body">
+        <ng-content></ng-content>
+      </div>
+
+      <div class="modal-footer">
+        <ng-content select="[modal-footer]"></ng-content>
+      </div>
+    </div>
+  </div>
+}
