@@ -30,6 +30,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        title: '300 Lugares — Descubre establecimientos',
         loadComponent: () =>
           import('./cliente/pages/inicio/inicio.component').then(
             (m) => m.InicioComponent
@@ -61,7 +62,7 @@ export const routes: Routes = [
       },
       {
         path: 'detalleEstablecimiento/:id',
-        title: 'Detalle del establecimiento — 300 Lugares',
+        title: 'Detalle — 300 Lugares',
         loadComponent: () =>
           import(
             './cliente/pages/detalle-establecimiento/detalle-establecimiento.component'
