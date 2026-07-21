@@ -1,0 +1,93 @@
+<header class="public-header">
+  <div class="public-header__container">
+    <a routerLink="/" class="public-header__brand" aria-label="300 Lugares - Inicio">
+      <img
+        src="/assets/img/logo.png"
+        alt="Logo 300 Lugares"
+        class="public-header__logo"
+      />
+      <span class="public-header__brand-text">300 Lugares</span>
+    </a>
+
+    <button
+      type="button"
+      class="public-header__burger"
+      aria-label="Abrir menú"
+      (click)="alternarMenuMovil()"
+    >
+      <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <nav
+      class="public-header__nav"
+      [class.public-header__nav--open]="menuMovilAbierto()"
+    >
+      <ul class="public-header__nav-list">
+        <li class="public-header__nav-item">
+          <a
+            routerLink="/"
+            routerLinkActive="public-header__nav-link--active"
+            class="public-header__nav-link"
+            (click)="alternarMenuMovil()"
+          >
+            ¿A dónde ir?
+          </a>
+        </li>
+        <li class="public-header__nav-item">
+          <a
+            routerLink="/mapa"
+            routerLinkActive="public-header__nav-link--active"
+            class="public-header__nav-link"
+            (click)="alternarMenuMovil()"
+          >
+            Mapa
+          </a>
+        </li>
+        <li class="public-header__nav-item">
+          <a
+            routerLink="/mapa-filtro"
+            routerLinkActive="public-header__nav-link--active"
+            class="public-header__nav-link"
+            (click)="alternarMenuMovil()"
+          >
+            Filtro Mapa
+          </a>
+        </li>
+
+        @if (!estaClienteLogueado()) {
+          <li class="public-header__nav-item">
+            <a
+              routerLink="/login/cliente"
+              routerLinkActive="public-header__nav-link--active"
+              class="public-header__nav-link"
+              (click)="alternarMenuMovil()"
+            >
+              Iniciar sesión
+            </a>
+          </li>
+          <li class="public-header__nav-item">
+            <a
+              routerLink="/registro/cliente"
+              routerLinkActive="public-header__nav-link--active"
+              class="public-header__nav-link"
+              (click)="alternarMenuMovil()"
+            >
+              Registrarse
+            </a>
+          </li>
+        } @else {
+          <li class="public-header__nav-item">
+            <a
+              href="#"
+              class="public-header__nav-link"
+              (click)="$event.preventDefault(); cerrarSesionCliente()"
+            >
+              <i class="fa-solid fa-right-from-bracket"></i>
+              Cerrar sesión
+            </a>
+          </li>
+        }
+      </ul>
+    </nav>
+  </div>
+</header>

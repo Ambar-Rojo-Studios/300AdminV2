@@ -20,7 +20,7 @@ import { Subscription } from 'rxjs';
 import {
   GoogleMapsLinkExtractorDirective,
   GoogleMapsCoords,
-} from '../../utils/google-maps-link-extractor.directive';
+} from '../../../utils/google-maps-link-extractor.directive';
 import { EstablecimientosService } from '../../../services/establecimientos.service';
 
 // Declaración para TypeScript (cargado via <script> en index.html)

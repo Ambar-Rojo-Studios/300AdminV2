@@ -1,0 +1,120 @@
+.public-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--border, #e5e5e5);
+  background: var(--surface, #fff);
+  color: var(--text, #111);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.public-header__container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 1rem;
+}
+
+.public-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: inherit;
+  font-weight: 700;
+}
+
+.public-header__logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.public-header__brand-text {
+  font-size: 1.05rem;
+}
+
+.public-header__burger {
+  display: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.25rem;
+  color: inherit;
+  padding: 0.25rem 0.5rem;
+}
+
+.public-header__nav-list {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.public-header__nav-link {
+  text-decoration: none;
+  color: inherit;
+  font-size: 0.95rem;
+  padding: 0.25rem 0;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.public-header__nav-link:hover {
+  border-bottom-color: var(--accent, #f23219);
+}
+
+.public-header__nav-link--active {
+  border-bottom-color: var(--accent, #f23219);
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .public-header__burger {
+    display: inline-flex;
+  }
+
+  .public-header__nav {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--surface, #fff);
+    border-bottom: 1px solid var(--border, #e5e5e5);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.2s ease;
+  }
+
+  .public-header__nav--open {
+    max-height: 320px;
+  }
+
+  .public-header__nav-list {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0.5rem 1rem;
+  }
+
+  .public-header__nav-item {
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--border, #e5e5e5);
+  }
+
+  .public-header__nav-item:first-child {
+    border-top: none;
+  }
+
+  .public-header__nav-link {
+    display: block;
+    padding: 0.5rem 0;
+    border-bottom: none;
+  }
+}
