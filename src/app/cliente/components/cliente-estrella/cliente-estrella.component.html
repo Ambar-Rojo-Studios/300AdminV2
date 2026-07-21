@@ -1,0 +1,30 @@
+@if (establecimientoId) {
+  <form class="rating-form" (submit)="$event.preventDefault()">
+    <div class="rating-form__stars">
+      @for (star of [5, 4, 3, 2, 1]; track star) {
+        <button
+          type="button"
+          class="rating-form__star"
+          [class.rating-form__star--on]="calificacion() === star"
+          [attr.aria-label]="star + ' estrellas'"
+          [attr.aria-pressed]="calificacion() === star"
+          (click)="seleccionar(star)"
+        >
+          <span aria-hidden="true">&#9733;</span>
+        </button>
+      }
+    </div>
+  </form>
+}
+
+@if (mensaje()) {
+  <div class="rating-form__feedback rating-form__feedback--success" role="alert">
+    {{ mensaje() }}
+  </div>
+}
+
+@if (error()) {
+  <div class="rating-form__feedback rating-form__feedback--error" role="alert">
+    {{ error() }}
+  </div>
+}

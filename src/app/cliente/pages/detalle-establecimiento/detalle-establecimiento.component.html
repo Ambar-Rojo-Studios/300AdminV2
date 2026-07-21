@@ -1,14 +1,60 @@
-<section class="detalle-page">
-  @if (error()) {
-    <div class="detalle-error">{{ error() }}</div>
-  } @else if (establecimientoId(); as id) {
-    <app-mapa-establecimiento
-      [establecimientoId]="id"
-      [height]="'400px'"
-      (markerClick)="onMarkerClick($event)"
-      (error)="onMapaError($event)"
-    ></app-mapa-establecimiento>
-  } @else {
-    <div class="detalle-loading">Cargando establecimiento…</div>
+<section class="detalle">
+  @if (cargando()) {
+    <div class="detalle__loading">Cargando establecimiento…</div>
+  } @else if (error()) {
+    <div class="detalle__error">{{ error() }}</div>
+  } @else if (establecimiento(); as est) {
+    <div class="detalle__hero">
+      @if (est.fldImgRefs) {
+        <img [src]="est.fldImgRefs" [alt]="est.fldNombre" />
+      }
+    </div>
+
+    <header class="detalle__heading">
+      <h1 class="detalle__title">{{ est.fldNombre }}</h1>
+      @if (est.fldCiudad || est.fldEstado) {
+        <p class="detalle__ubicacion">
+          {{ est.fldCiudad }}{{ est.fldCiudad && est.fldEstado ? ', ' : '' }}{{ est.fldEstado }}
+        </p>
+      }
+    </header>
+
+    <section class="detalle__seccion">
+      <h2 class="detalle__seccion-title">Acerca de este lugar</h2>
+      <p class="detalle__descripcion">{{ est.fldDescripcion }}</p>
+    </section>
+
+    <section class="detalle__seccion">
+      <h2 class="detalle__seccion-title">Etiquetas</h2>
+      <app-etiquetas-listado-public
+        [establecimientoId]="est.idEstablecimiento"
+      ></app-etiquetas-listado-public>
+    </section>
+
+    <section class="detalle__seccion">
+      <h2 class="detalle__seccion-title">Horario</h2>
+      <p class="detalle__horario">
+        Apertura: {{ est.fldHorarioApertura || '—' }} · Cierre: {{ est.fldHorarioCierre || '—' }}
+      </p>
+      <ul class="detalle__dias">
+        @for (dia of diasSemana; track dia[0]) {
+          <li [class.detalle__dia--on]="est[dia[1]]">{{ dia[0] }}</li>
+        }
+      </ul>
+    </section>
+
+    <section class="detalle__seccion">
+      <h2 class="detalle__seccion-title">Ubicación</h2>
+      <app-mapa-establecimiento
+        [establecimientoId]="est.idEstablecimiento"
+        [height]="'360px'"
+      ></app-mapa-establecimiento>
+    </section>
+
+    <section class="detalle__seccion">
+      <app-comentarios-cliente
+        [establecimientoId]="est.idEstablecimiento"
+      ></app-comentarios-cliente>
+    </section>
   }
 </section>

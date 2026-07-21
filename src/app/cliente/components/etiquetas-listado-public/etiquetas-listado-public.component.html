@@ -1,0 +1,13 @@
+@if (cargando()) {
+  <div class="etiquetas-listado__loading">Cargando etiquetas…</div>
+} @else if (error()) {
+  <div class="etiquetas-listado__error">{{ error() }}</div>
+} @else if (etiquetas().length > 0) {
+  <ul class="etiquetas-listado__lista">
+    @for (et of etiquetas(); track et.id) {
+      <li class="etiquetas-listado__chip" [attr.title]="et.fldCategoria">
+        {{ et.fldNombre }}
+      </li>
+    }
+  </ul>
+}
