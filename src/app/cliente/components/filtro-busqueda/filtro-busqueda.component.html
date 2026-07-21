@@ -1,0 +1,44 @@
+<div class="buscador-container" role="search">
+  <div class="buscador__input-wrap">
+    <input
+      type="text"
+      class="buscador__input"
+      placeholder="Busca por nombre del lugar..."
+      [(ngModel)]="searchText"
+      (ngModelChange)="onSearchChange($event)"
+      (focus)="onInputFocus()"
+      (blur)="onInputBlur()"
+      name="search"
+      autocomplete="off"
+      role="combobox"
+      aria-label="Buscar establecimiento"
+      aria-autocomplete="list"
+      [attr.aria-expanded]="mostrarResultados ? 'true' : 'false'"
+    />
+    <i class="fa-solid fa-magnifying-glass buscador__icon" aria-hidden="true"></i>
+  </div>
+
+  @if (mostrarResultados && resultados.length > 0) {
+    <div
+      class="buscador__dropdown"
+      role="listbox"
+      aria-label="Resultados de búsqueda"
+      (mouseenter)="onDropdownEnter()"
+      (mouseleave)="onDropdownLeave()"
+    >
+      @for (est of resultados; track trackById($index, est)) {
+        <button
+          type="button"
+          class="buscador__resultado"
+          role="option"
+          (mousedown)="$event.preventDefault(); seleccionar(est)"
+        >
+          <strong>{{ est.fldNombre }}</strong>
+          @if (est.fldDireccion) {
+            <span class="buscador__resultado-direccion">{{ est.fldDireccion }}</span>
+          }
+        </button>
+      }
+    </div>
+  }
+</div>

@@ -52,6 +52,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'buscar',
+        title: 'Buscar — 300 Lugares',
+        loadComponent: () =>
+          import('./cliente/pages/buscar/buscar.component').then(
+            (m) => m.BuscarComponent
+          ),
+      },
+      {
         path: 'detalleEstablecimiento/:id',
         title: 'Detalle del establecimiento — 300 Lugares',
         loadComponent: () =>

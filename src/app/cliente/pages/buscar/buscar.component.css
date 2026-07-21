@@ -1,0 +1,50 @@
+.buscar {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.buscar__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  text-align: center;
+}
+
+.buscar__title {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text, #111);
+}
+
+.buscar__subtitle {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  color: var(--text-muted, #777);
+}
+
+.buscar__input {
+  width: 100%;
+  max-width: 520px;
+}
+
+.buscar__loading,
+.buscar__error {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--text-muted, #777);
+  font-size: 0.95rem;
+}
+
+.buscar__error {
+  color: var(--danger, #dc2626);
+}
+
+.buscar__mapa {
+  width: 100%;
+}

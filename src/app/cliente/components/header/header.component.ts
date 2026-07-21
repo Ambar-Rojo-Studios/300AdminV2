@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 
 import { AuthService } from '../../../auth/services/auth.service';
+import { FiltroBusquedaComponent } from '../filtro-busqueda/filtro-busqueda.component';
+import { EstablecimientoListDTO } from '../../../models/establecimiento.model';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, FiltroBusquedaComponent],
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.css'],
 })
@@ -27,5 +29,10 @@ export class HeaderComponent {
 
   cerrarSesionCliente(): void {
     this.authService.logoutCliente();
+  }
+
+  irADetalle(est: EstablecimientoListDTO): void {
+    this.router.navigate(['/detalleEstablecimiento', est.idEstablecimiento]);
+    this.menuMovilAbierto.set(false);
   }
 }

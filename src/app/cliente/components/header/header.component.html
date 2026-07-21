@@ -9,6 +9,12 @@
       <span class="public-header__brand-text">300 Lugares</span>
     </a>
 
+    <div class="public-header__search">
+      <app-filtro-busqueda
+        (establecimientoSeleccionado)="irADetalle($event)"
+      ></app-filtro-busqueda>
+    </div>
+
     <button
       type="button"
       class="public-header__burger"

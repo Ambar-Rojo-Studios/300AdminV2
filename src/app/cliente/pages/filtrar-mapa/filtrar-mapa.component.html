@@ -1,6 +1,44 @@
-<aside class="filter-map-wrapper">
-  <p class="filter-map-placeholder">
-    [STUB] Panel de filtros externo. Reemplazar por la implementación real
-    de FilterMapComponent (v1) cuando se porte.
-  </p>
+<aside class="filter-map-wrapper" [class.oculto]="panelOculto">
+  <button
+    type="button"
+    class="menu-toggle"
+    aria-label="Mostrar u ocultar filtros"
+    (click)="alternarPanel()"
+  >
+    <i class="fa-solid fa-bars"></i>
+  </button>
+
+  <div class="filter-map-container">
+    <header class="filter-map__header">
+      <h3>Filtros</h3>
+      <button
+        type="button"
+        class="toggle-btn"
+        [class.activo]="esBusquedaEstricta"
+        (click)="alternarBusquedaEstricta()"
+      >
+        {{ esBusquedaEstricta ? 'Modo estricto' : 'Modo flexible' }}
+      </button>
+    </header>
+
+    <div class="filter-map__categorias">
+      @for (cat of categoriasConEtiquetas; track cat.idCategoria) {
+        <article class="categoria-card">
+          <h4 class="categoria-nombre">{{ cat.fldNombre }}</h4>
+          <div class="etiquetas">
+            @for (et of cat.etiquetas; track et.idEtiqueta) {
+              <button
+                type="button"
+                class="etiqueta-btn"
+                [class.seleccionada]="estaSeleccionada(et.idEtiqueta)"
+                (click)="alternarEtiqueta(et.idEtiqueta)"
+              >
+                {{ et.fldNombre }}
+              </button>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  </div>
 </aside>

@@ -1,0 +1,27 @@
+<section class="buscar">
+  <header class="buscar__header">
+    <h1 class="buscar__title">Buscar establecimientos</h1>
+    <p class="buscar__subtitle">
+      Escribe el nombre del lugar para verlo en el mapa.
+    </p>
+    <div class="buscar__input">
+      <app-filtro-busqueda
+        (establecimientoSeleccionado)="onSeleccionado($event)"
+      ></app-filtro-busqueda>
+    </div>
+  </header>
+
+  @if (cargando()) {
+    <div class="buscar__loading">Buscando…</div>
+  } @else if (error()) {
+    <div class="buscar__error">{{ error() }}</div>
+  } @else {
+    <section class="buscar__mapa">
+      <app-mapa-establecimiento
+        [establecimientos]="markers()"
+        [height]="'60vh'"
+        (markerClick)="onMarkerClick($event)"
+      ></app-mapa-establecimiento>
+    </section>
+  }
+</section>

@@ -8,22 +8,9 @@ import {
 } from '../../../shared/components/mapa-establecimiento';
 import {
   FilterMapComponent,
-  CoordenadaFiltradaV1,
+  CoordenadaFiltrada,
 } from '../filtrar-mapa/filtrar-mapa.component';
 
-/**
- * Pantalla `/mapa-filtro` del sitio público — combina panel externo de
- * filtros + mapa unificado.
- *
- * Flujo:
- *   <app-filter-map> emite coordenadasFiltradas (shape v1)
- *        → este wrapper mapea a EstablecimientoMarker[] (lat/lng number)
- *        → <app-mapa-establecimiento> los pinta
- *        → markerClick → navega a detalle
- *
- * La lógica de filtrado (Servicio HTTP) vive en FilterMapComponent
- * (stub por ahora). Este wrapper solo orquesta layout + mapeo.
- */
 @Component({
   selector: 'app-mapa-filtro',
   standalone: true,
@@ -34,16 +21,14 @@ import {
 export class MapaFiltroComponent {
   private readonly router = inject(Router);
 
-  /** Lista filtrada ya mapeada a EstablecimientoMarker[]. */
   readonly filtrados = signal<EstablecimientoMarker[]>([]);
 
-  /** Recibe coords del FilterMapComponent (shape v1) y las mapea. */
-  onCoordenadasFiltradas(list: CoordenadaFiltradaV1[]): void {
+  onCoordenadasFiltradas(list: CoordenadaFiltrada[]): void {
     const mapped: EstablecimientoMarker[] = list
       .map((c) => {
         if (!Number.isFinite(c.lat) || !Number.isFinite(c.lng)) return null;
         return {
-          id: 0, // v1 no llevaba id en este flujo; el detalle usa [establecimientoId]
+          id: c.id ?? 0,
           nombre: c.nombre,
           lat: c.lat,
           lng: c.lng,
@@ -57,9 +42,10 @@ export class MapaFiltroComponent {
   }
 
   irAlDetalle(est: EstablecimientoMarker): void {
-    // En el flujo de filtro no tenemos id del establecimiento (solo coords).
-    // Cuando se porte FilterMapComponent real, debe incluir `id` en el shape
-    // y habilitar navegación. Por ahora no navegamos.
-    console.log('[MapaFiltro] markerClick sin id navegable:', est);
+    if (est.id && est.id > 0) {
+      this.router.navigate(['/detalleEstablecimiento', est.id]);
+    } else {
+      console.warn('[MapaFiltro] markerClick sin id navegable:', est);
+    }
   }
 }
