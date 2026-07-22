@@ -18,6 +18,7 @@ export class HeaderComponent {
   private readonly router = inject(Router);
 
   readonly menuMovilAbierto = signal(false);
+  readonly showLogoutModal = signal(false);
 
   alternarMenuMovil(): void {
     this.menuMovilAbierto.update((v) => !v);
@@ -28,7 +29,17 @@ export class HeaderComponent {
   }
 
   cerrarSesionCliente(): void {
+    this.showLogoutModal.set(true);
+  }
+
+  confirmarLogout(): void {
     this.authService.logoutCliente();
+    this.showLogoutModal.set(false);
+    this.menuMovilAbierto.set(false);
+  }
+
+  cancelarLogout(): void {
+    this.showLogoutModal.set(false);
   }
 
   irADetalle(est: EstablecimientoListDTO): void {

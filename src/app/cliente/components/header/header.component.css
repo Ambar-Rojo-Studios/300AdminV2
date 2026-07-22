@@ -128,3 +128,69 @@
     border-bottom: none;
   }
 }
+
+.public-header__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1500;
+}
+
+.public-header__modal {
+  background: var(--surface, #fff);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  max-width: 400px;
+  width: calc(100% - 2rem);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.public-header__modal h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+  color: var(--text, #111);
+}
+
+.public-header__modal p {
+  margin: 0 0 1rem;
+  color: var(--text-secondary, #555);
+  font-size: 0.95rem;
+}
+
+.public-header__modal-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.public-header__modal-acciones .btn {
+  border: none;
+  border-radius: 999px;
+  padding: 0.4rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  font: inherit;
+  transition: background 0.2s ease;
+}
+
+.public-header__modal-acciones .btn--ghost {
+  background: var(--surface-2, #f5f5f5);
+  color: var(--text, #333);
+}
+
+.public-header__modal-acciones .btn--ghost:hover {
+  background: #eaeaea;
+}
+
+.public-header__modal-acciones .btn--danger {
+  background: var(--danger, #dc2626);
+  color: #fff;
+}
+
+.public-header__modal-acciones .btn--danger:hover {
+  background: var(--danger-hover, #b91c1c);
+}
