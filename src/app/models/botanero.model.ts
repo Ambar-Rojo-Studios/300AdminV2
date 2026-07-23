@@ -63,6 +63,7 @@ export interface BotaneroEstablecimientoDTO {
   fldPromoViernes: string;
   fldPromoSabado: string;
   fldPromoDomingo: string;
+  fldPromo300Lugares: string;
 }
 
 /**

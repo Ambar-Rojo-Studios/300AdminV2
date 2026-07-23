@@ -4,6 +4,9 @@
 .stats { display: flex; gap: 2rem; }
 .stats dt { font-size: 0.85rem; color: var(--text-muted, #666); }
 .stats dd { margin: 0; font-size: 1.5rem; font-weight: 700; }
+.promos { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+.promos dt { font-size: 0.85rem; color: var(--text-muted, #666); }
+.promos dd { margin: 0; }
 .comentarios { list-style: none; padding: 0; display: grid; gap: 1rem; }
 .comentarios li { border-bottom: 1px solid var(--border, #e5e5e5); padding-bottom: 0.75rem; }
 .error { color: var(--danger, #c0392b); }
