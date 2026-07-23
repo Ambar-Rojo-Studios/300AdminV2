@@ -42,9 +42,24 @@ const defaults: AppEnvironment = {
 
 const runtimeConfig = typeof window !== 'undefined' ? window.__env : undefined;
 
+/**
+ * En localhost siempre pegamos al backend local, aunque runtime-config.js traiga
+ * la URL de producción (ese archivo se sirve igual en `ng serve`). Sin esto, el
+ * front en desarrollo autentica contra prod y el login con usuarios de prueba falla.
+ *
+ * ponytail: se resuelve por hostname en vez de duplicar todo environments.ts en un
+ * environments.development.ts + fileReplacements. Techo: solo aplica en cliente —
+ * durante el render SSR no hay window, así que ahí se sigue usando la URL de
+ * runtime-config. Si el SSR en desarrollo llega a necesitar el backend local,
+ * ese es el momento de pasar a fileReplacements.
+ */
+const LOCAL_HOSTNAMES = ['localhost', '127.0.0.1', '[::1]'];
+const isLocalhost = typeof window !== 'undefined' && LOCAL_HOSTNAMES.includes(window.location.hostname);
+
 export const environment: AppEnvironment = {
   ...defaults,
   ...(runtimeConfig || {}),
+  ...(isLocalhost ? { apiBaseUrl: 'http://localhost:8080' } : {}),
   firebase: {
     ...defaults.firebase,
     ...(runtimeConfig?.firebase || {})
