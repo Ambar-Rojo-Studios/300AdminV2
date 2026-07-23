@@ -1,0 +1,252 @@
+<form #establecimientoForm="ngForm" [id]="formId()" (ngSubmit)="handleSubmit(establecimientoForm)">
+  @if (formError()) {
+    <div style="background:#fdecea;color:#c0392b;border:1px solid #f5c6cb;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:0.9rem;">
+      {{ formError() }}
+    </div>
+  }
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">
+    <!-- ── Columna izquierda: datos generales ─────────────────────── -->
+    <div>
+      <app-text-field
+        label="Nombre"
+        name="fldNombre"
+        [(ngModel)]="form().fldNombre"
+        [required]="true"
+        [invalid]="attemptedSubmit() && !form().fldNombre?.trim()"
+        errorMessage="El nombre es obligatorio."
+      ></app-text-field>
+
+      <app-textarea-field
+        label="Descripción"
+        name="fldDescripcion"
+        [rows]="3"
+        [(ngModel)]="form().fldDescripcion"
+      ></app-textarea-field>
+
+      @if (mode() === 'admin') {
+        <app-select-field
+          label="Empresa"
+          name="fkIdEmpresa"
+          placeholder="Selecciona una empresa"
+          [options]="empresaOptions()"
+          [(ngModel)]="form().fkIdEmpresa"
+          [required]="true"
+          [invalid]="attemptedSubmit() && !form().fkIdEmpresa"
+          errorMessage="Selecciona una empresa."
+        ></app-select-field>
+
+        <app-select-field
+          label="Suscripción"
+          name="fkIdSuscripcion"
+          placeholder="Selecciona una suscripción"
+          [options]="suscripcionOptions()"
+          [(ngModel)]="form().fkIdSuscripcion"
+          [required]="true"
+          [invalid]="attemptedSubmit() && !form().fkIdSuscripcion"
+          errorMessage="Selecciona una suscripción."
+        ></app-select-field>
+      }
+
+      <app-select-field
+        label="Tipo de establecimiento"
+        name="fkIdTipoEstablecimiento"
+        placeholder="Selecciona un tipo"
+        [options]="tipoOptions()"
+        [(ngModel)]="form().fkIdTipoEstablecimiento"
+      ></app-select-field>
+
+      <app-text-field
+        label="Estado"
+        name="fldEstado"
+        [(ngModel)]="form().fldEstado"
+        [required]="true"
+        [invalid]="attemptedSubmit() && !form().fldEstado?.trim()"
+        errorMessage="El estado es obligatorio."
+      ></app-text-field>
+
+      <app-text-field
+        label="Ciudad"
+        name="fldCiudad"
+        [(ngModel)]="form().fldCiudad"
+        [required]="true"
+        [invalid]="attemptedSubmit() && !form().fldCiudad?.trim()"
+        errorMessage="La ciudad es obligatoria."
+      ></app-text-field>
+
+      <app-text-field
+        label="Dirección"
+        name="fldDireccion"
+        [(ngModel)]="form().fldDireccion"
+        [required]="true"
+        [invalid]="attemptedSubmit() && !form().fldDireccion?.trim()"
+        errorMessage="La dirección es obligatoria."
+      ></app-text-field>
+
+      <app-text-field
+        label="Referencia geográfica"
+        name="fldReferenciaGeografica"
+        [(ngModel)]="form().fldReferenciaGeografica"
+        [required]="true"
+        [invalid]="attemptedSubmit() && !form().fldReferenciaGeografica?.trim()"
+        errorMessage="La referencia geográfica es obligatoria."
+      ></app-text-field>
+
+      <app-mapa-establecimiento
+        [coords]="coordsActuales()"
+        [modo]="esCreacion() ? 'crear' : 'editar'"
+        (coordsChange)="onCoordsChange($event)"
+      ></app-mapa-establecimiento>
+    </div>
+
+    <!-- ── Columna derecha: contacto, horarios, fotos ──────────────── -->
+    <div>
+      <app-text-field
+        label="Correo electrónico"
+        type="email"
+        name="fldCorreoElectronico"
+        [(ngModel)]="form().fldCorreoElectronico"
+      ></app-text-field>
+
+      <app-text-field
+        label="Celular 1"
+        name="fldCelular1"
+        [(ngModel)]="form().fldCelular1"
+      ></app-text-field>
+
+      <app-text-field
+        label="Celular 2"
+        name="fldCelular2"
+        [(ngModel)]="form().fldCelular2"
+      ></app-text-field>
+
+      <app-text-field
+        label="Comentarios sobre el celular"
+        name="fldCelularComentarios"
+        [(ngModel)]="form().fldCelularComentarios"
+      ></app-text-field>
+
+      <div style="display:flex;gap:12px;">
+        <div style="flex:1;">
+          <app-text-field
+            label="Horario apertura"
+            type="time"
+            name="fldHorarioApertura"
+            [ngModel]="form().fldHorarioApertura"
+            (ngModelChange)="onHorarioChange('fldHorarioApertura', $event)"
+            [required]="true"
+            [invalid]="attemptedSubmit() && !form().fldHorarioApertura"
+            errorMessage="Obligatorio."
+          ></app-text-field>
+        </div>
+        <div style="flex:1;">
+          <app-text-field
+            label="Horario cierre"
+            type="time"
+            name="fldHorarioCierre"
+            [ngModel]="form().fldHorarioCierre"
+            (ngModelChange)="onHorarioChange('fldHorarioCierre', $event)"
+            [required]="true"
+            [invalid]="attemptedSubmit() && !form().fldHorarioCierre"
+            errorMessage="Obligatorio."
+          ></app-text-field>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Días de apertura</label>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;">
+          @for (dia of diasSemana; track dia.key) {
+            <label style="display:flex;align-items:center;gap:6px;font-weight:400;">
+              <input type="checkbox" [name]="dia.key" [(ngModel)]="form()[dia.key]" />
+              {{ dia.label }}
+            </label>
+          }
+        </div>
+      </div>
+
+      <app-text-field
+        label="Sugerencia de la casa"
+        name="fldSugerenciaDeLaCasa"
+        [(ngModel)]="form().fldSugerenciaDeLaCasa"
+      ></app-text-field>
+
+      <app-file-field
+        label="Foto (imagen de perfil)"
+        [required]="esCreacion()"
+        [invalid]="!!fileErrors().foto || (attemptedSubmit() && esCreacion() && !files().foto)"
+        [errorMessage]="fileErrors().foto || (attemptedSubmit() && esCreacion() && !files().foto ? 'La foto es obligatoria al crear.' : '')"
+        [previewUrl]="previewFor('foto', form().fldImgRefs)"
+        hint="JPG o PNG"
+        (fileChange)="onFileSelected('foto', $event)"
+      ></app-file-field>
+
+      @if (mode() === 'admin') {
+        <app-file-field
+          label="Foto 2"
+          [invalid]="!!fileErrors().foto2"
+          [errorMessage]="fileErrors().foto2 || ''"
+          [previewUrl]="previewFor('foto2', form().fldImgRefs2)"
+          (fileChange)="onFileSelected('foto2', $event)"
+        ></app-file-field>
+
+        <app-file-field
+          label="Foto 3"
+          [invalid]="!!fileErrors().foto3"
+          [errorMessage]="fileErrors().foto3 || ''"
+          [previewUrl]="previewFor('foto3', form().fldImgRefs3)"
+          (fileChange)="onFileSelected('foto3', $event)"
+        ></app-file-field>
+
+        <app-file-field
+          label="Foto 4"
+          [invalid]="!!fileErrors().foto4"
+          [errorMessage]="fileErrors().foto4 || ''"
+          [previewUrl]="previewFor('foto4', form().fldImgRefs4)"
+          (fileChange)="onFileSelected('foto4', $event)"
+        ></app-file-field>
+      }
+
+      <app-file-field
+        label="Menú"
+        [invalid]="!!fileErrors().menu"
+        [errorMessage]="fileErrors().menu || ''"
+        [previewUrl]="previewFor('menu', form().fldMenu)"
+        (fileChange)="onFileSelected('menu', $event)"
+      ></app-file-field>
+
+      <app-text-field
+        label="Alimentos y bebidas"
+        name="fldAlimentosBebidas"
+        [(ngModel)]="form().fldAlimentosBebidas"
+      ></app-text-field>
+
+      <app-text-field
+        label="Ticket promedio"
+        name="fldTicketPromedio"
+        [(ngModel)]="form().fldTicketPromedio"
+      ></app-text-field>
+
+      <app-text-field
+        label="Antigüedad (años)"
+        type="number"
+        name="fldAntiguedadAnios"
+        [(ngModel)]="form().fldAntiguedadAnios"
+      ></app-text-field>
+    </div>
+  </div>
+
+  @if (!esCreacion()) {
+    <div class="form-group">
+      <label>Etiquetas</label>
+      <app-etiquetas-selector
+        [entidadId]="form().idEstablecimiento"
+        [adapter]="establecimientoEtiquetasAdapter"
+      ></app-etiquetas-selector>
+    </div>
+  } @else {
+    <p style="color:var(--text-muted);font-size:0.85rem;">
+      Las etiquetas se podrán asignar una vez creado el establecimiento.
+    </p>
+  }
+</form>

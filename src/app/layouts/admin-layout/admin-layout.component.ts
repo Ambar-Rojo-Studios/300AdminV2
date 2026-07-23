@@ -14,6 +14,7 @@ import { AuthService } from '../../auth/services/auth.service';
           <a routerLink="/admin/dashboard">Dashboard</a>
           <a routerLink="/admin/cuentas-botanero">Cuentas de botaneros</a>
           <a routerLink="/admin/empresas">Empresas</a>
+          <a routerLink="/admin/establecimientos">Establecimientos</a>
           <!-- ponytail: los links de CRUDs se agregan conforme se migren las páginas -->
         </nav>
         <button type="button" (click)="cerrarSesion()">Cerrar sesión</button>

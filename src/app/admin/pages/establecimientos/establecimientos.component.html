@@ -1,0 +1,60 @@
+<section class="admin-page">
+  <div class="header-actions">
+    <h2>Establecimientos</h2>
+    <button type="button" class="create-btn" aria-label="Crear establecimiento" title="Crear establecimiento" (click)="abrirModalCrear()">
+      + Nuevo
+    </button>
+  </div>
+
+  <app-data-table
+    [columns]="columns"
+    [data]="establecimientosOrdenados()"
+    [loading]="isLoading()"
+    emptyMessage="No hay establecimientos para mostrar."
+    [currentPage]="currentPage()"
+    [totalPages]="totalPages()"
+    [sortKey]="sortKey()"
+    [sortDirection]="sortDirection()"
+    (pageChange)="onPageChange($event)"
+    (sortChange)="onSortChange($event)"
+  >
+    <ng-template let-row>
+      <button type="button" class="edit-btn" [attr.aria-label]="'Editar ' + row.fldNombre" (click)="abrirModalEditar(row)">
+        Editar
+      </button>
+      <button type="button" class="delete-btn" [attr.aria-label]="'Eliminar ' + row.fldNombre" (click)="abrirModalEliminar(row)">
+        Eliminar
+      </button>
+    </ng-template>
+  </app-data-table>
+
+  <app-modal [open]="showFormModal()" [title]="modalTitle()" size="lg" (closed)="cerrarModalFormulario()">
+    <app-establecimiento-form
+      mode="admin"
+      formId="establecimientoForm"
+      [value]="formValue()"
+      [empresas]="empresas()"
+      [suscripciones]="suscripciones()"
+      [tiposEstablecimiento]="tiposEstablecimiento()"
+      [saving]="isSaving()"
+      (formSubmit)="onEstablecimientoSubmit($event)"
+    ></app-establecimiento-form>
+
+    <ng-container modal-footer>
+      <button type="button" class="btn-secondary" (click)="cerrarModalFormulario()" [disabled]="isSaving()">Cancelar</button>
+      <button type="submit" form="establecimientoForm" class="btn-primary" [disabled]="isSaving()">
+        {{ isSaving() ? 'Guardando...' : (modalMode() === 'edit' ? 'Actualizar' : 'Guardar') }}
+      </button>
+    </ng-container>
+  </app-modal>
+
+  <app-confirm-dialog
+    [open]="showDeleteModal()"
+    title="Confirmar eliminación"
+    message="¿Seguro que deseas eliminar el establecimiento"
+    [itemName]="establecimientoAEliminar()?.fldNombre ?? null"
+    [loading]="isDeleting()"
+    (confirm)="confirmarEliminar()"
+    (cancel)="cerrarModalEliminar()"
+  ></app-confirm-dialog>
+</section>

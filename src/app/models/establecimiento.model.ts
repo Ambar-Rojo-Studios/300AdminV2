@@ -49,6 +49,8 @@ export interface BaseEstablecimientoDTO {
   fldNombre: string;
   fldEstado: string;
   fldCiudad: string;
+  /** Agregado: el backend lo devuelve/espera (EstablecimientoDTO), no editable desde este form todavía. */
+  fldZona: string | null;
   fldDireccion: string;
   fldReferenciaGeografica: string;
   fldCoordLatitud: string;
@@ -57,11 +59,25 @@ export interface BaseEstablecimientoDTO {
   fldDescripcion: string | null;
   fldCorreoElectronico: string | null;
   fldSugerenciaDeLaCasa: string | null;
+
+  /**
+   * Campos legacy: el backend los sigue devolviendo en las respuestas por compatibilidad,
+   * pero YA NO son la fuente de verdad para editar. Para eso ahora usa imagenesPerfil/imagenesMenu.
+   */
   fldImgRefs: string | null;
   fldImgRefs2: string | null;
   fldImgRefs3: string | null;
   fldImgRefs4: string | null;
   fldMenu: string | null;
+
+  /**
+   * Fuente de verdad ACTUAL de las imágenes (sincronización por arreglo).
+   * Al editar: hay que mandar aquí las URLs existentes que se quieren CONSERVAR;
+   * cualquier URL que no se incluya se BORRA (BD + Supabase). Ver EstablecimientosService.editEstablecimiento.
+   */
+  imagenesPerfil: string[];
+  imagenesMenu: string[];
+
   fldHorarioApertura: string | null;
   fldHorarioCierre: string | null;
   fldLunes: boolean | null;
