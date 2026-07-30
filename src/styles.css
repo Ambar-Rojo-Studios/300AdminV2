@@ -162,7 +162,7 @@ a { color: var(--accent); text-decoration: none; }
 
 /* Contenedor estándar de páginas CRUD del admin */
 .admin-page {
-  max-width: 1100px;
+  max-width: 1600px;
   margin: 0 auto;
   animation: dsFadeIn 0.35s var(--ease);
 }
@@ -407,6 +407,19 @@ input.is-invalid, select.is-invalid, textarea.is-invalid {
 }
 
 .invalid-feedback { color: var(--danger); font-size: 0.78rem; margin-top: 6px; }
+
+.form-group input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* Grid de 2 columnas para formularios largos (ej. Promoción) */
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
+@media (max-width: 640px) {
+  .form-grid-2 { grid-template-columns: 1fr; }
+}
 
 /* -------------------------------------------------------------------- MODALES */
 .modal-overlay {
