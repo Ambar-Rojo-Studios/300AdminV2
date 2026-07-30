@@ -2,7 +2,7 @@
   <div class="header-actions">
     <h2>Promociones</h2>
     <button type="button" class="create-btn" aria-label="Crear promoción" title="Crear promoción" (click)="abrirModalCrear()">
-      + Nueva
+      <i class="fa fa-plus" aria-hidden="true"></i>
     </button>
   </div>
 
@@ -20,23 +20,26 @@
   >
     <ng-template let-row>
       <button type="button" class="edit-btn" [attr.aria-label]="'Editar ' + row.fldNombre" (click)="abrirModalEditar(row)">
-        Editar
+        <i class="fas fa-edit" aria-hidden="true"></i>
       </button>
       <button type="button" class="delete-btn" [attr.aria-label]="'Eliminar ' + row.fldNombre" (click)="abrirModalEliminar(row)">
-        Eliminar
+        <i class="fas fa-trash" aria-hidden="true"></i>
       </button>
     </ng-template>
   </app-data-table>
 
   <app-modal [open]="showFormModal()" [title]="modalTitle()" size="lg" (closed)="cerrarModalFormulario()">
     <form #promocionForm="ngForm" (ngSubmit)="onSubmit(promocionForm)" id="promocionForm">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">
+      <div class="form-grid-2">
         <div>
           <app-text-field
             label="Nombre"
             name="fldNombre"
+            #fldNombre="ngModel"
             [(ngModel)]="promocion().fldNombre"
             [required]="true"
+            [invalid]="!!(fldNombre.invalid && fldNombre.touched)"
+            errorMessage="El nombre es obligatorio."
           ></app-text-field>
 
           <app-textarea-field
@@ -49,19 +52,25 @@
           <app-select-field
             label="Establecimiento"
             name="fkIdEstablecimiento"
+            #fkIdEstablecimiento="ngModel"
             placeholder="Selecciona un establecimiento"
             [options]="establecimientoOptions()"
             [(ngModel)]="promocion().fkIdEstablecimiento"
             [required]="true"
+            [invalid]="!!(fkIdEstablecimiento.invalid && fkIdEstablecimiento.touched)"
+            errorMessage="Selecciona un establecimiento."
           ></app-select-field>
 
           <app-select-field
             label="Suscripción"
             name="fkIdSuscripcion"
+            #fkIdSuscripcion="ngModel"
             placeholder="Selecciona una suscripción"
             [options]="suscripcionOptions()"
             [(ngModel)]="promocion().fkIdSuscripcion"
             [required]="true"
+            [invalid]="!!(fkIdSuscripcion.invalid && fkIdSuscripcion.touched)"
+            errorMessage="Selecciona una suscripción."
           ></app-select-field>
 
           <app-select-field
@@ -80,8 +89,11 @@
                 label="Fecha inicio"
                 type="date"
                 name="fldFechaInicio"
+                #fldFechaInicio="ngModel"
                 [(ngModel)]="promocion().fldFechaInicio"
                 [required]="true"
+                [invalid]="!!(fldFechaInicio.invalid && fldFechaInicio.touched)"
+                errorMessage="La fecha de inicio es obligatoria."
               ></app-text-field>
             </div>
             <div style="flex:1;">
@@ -89,8 +101,11 @@
                 label="Fecha fin"
                 type="date"
                 name="fldFechaFin"
+                #fldFechaFin="ngModel"
                 [(ngModel)]="promocion().fldFechaFin"
                 [required]="true"
+                [invalid]="!!(fldFechaFin.invalid && fldFechaFin.touched)"
+                errorMessage="La fecha de fin es obligatoria."
               ></app-text-field>
             </div>
           </div>
@@ -98,8 +113,11 @@
           <app-text-field
             label="Código de validación"
             name="fldCodigoValidacion"
+            #fldCodigoValidacion="ngModel"
             [(ngModel)]="promocion().fldCodigoValidacion"
             [required]="true"
+            [invalid]="!!(fldCodigoValidacion.invalid && fldCodigoValidacion.touched)"
+            errorMessage="El código de validación es obligatorio."
           ></app-text-field>
 
           <div class="form-group">
