@@ -1,7 +1,7 @@
 // src/app/services/establecimientos.services.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
-import { Observable, catchError, throwError, firstValueFrom } from 'rxjs';
+import { Observable, catchError, throwError, firstValueFrom, map } from 'rxjs';
 import {ApiResponseEstablecimiento,EstablecimientoCreateDTO,EstablecimientoEditDTO,EstablecimientoListDTO,
 EstablecimientoResponseDTO,idEstablecimiento} from '../models/establecimiento.model';
 
@@ -155,9 +155,21 @@ export class EstablecimientosService {
 
   deleteEstablecimiento(id: number): Observable<ApiResponseEstablecimiento<any>> {
      const url = `${this.deleteUrl}?id=${id}`;
-        return this.http.delete<ApiResponseEstablecimiento<any>>(url).pipe(
+        // El backend a veces regresa el cuerpo VACÍO en el DELETE (éxito igual);
+        // pedimos texto crudo para que Angular no truene intentando parsear JSON de la nada.
+        return this.http.delete(url, { responseType: 'text' }).pipe(
+          map((texto) => this.parseRespuestaDelete(texto)),
           catchError(this.handleError)
       );
+  }
+
+  private parseRespuestaDelete(texto: string): ApiResponseEstablecimiento<any> {
+    if (!texto) return { codigoEstatus: 1, mensaje: 'Eliminado correctamente.', cuerpoDeRespuesta: null };
+    try {
+      return JSON.parse(texto);
+    } catch {
+      return { codigoEstatus: 1, mensaje: 'Eliminado correctamente.', cuerpoDeRespuesta: null };
+    }
   }
 
   obtenerTodosEstablecimientos(): Observable<ApiResponseEstablecimiento<EstablecimientoListDTO[]>> {

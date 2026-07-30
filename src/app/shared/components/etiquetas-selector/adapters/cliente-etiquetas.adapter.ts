@@ -8,11 +8,6 @@ import {
   EtiquetasAdapter,
 } from '../../../models/etiqueta-asociada.model';
 
-/**
- * Implementación de EtiquetasAdapter para clientes.
- * Traduce entre los DTOs de etiqueta_x_cliente y el contrato genérico que
- * espera <app-etiquetas-selector>.
- */
 @Injectable({ providedIn: 'root' })
 export class ClienteEtiquetasAdapter implements EtiquetasAdapter {
   private readonly etiquetasXCliente = inject(EtiquetasXClienteService);
@@ -21,7 +16,7 @@ export class ClienteEtiquetasAdapter implements EtiquetasAdapter {
   obtenerAsociadas(clienteId: number): Observable<EtiquetaAsociada[]> {
     return this.etiquetasXCliente.obtenerEtiquetasPorCliente(clienteId).pipe(
       map((res) =>
-        (res.cuerpoDeRespuesta ?? []).map((t) => ({
+        (res?.cuerpoDeRespuesta ?? []).map((t) => ({
           id: t.id,
           idEtiqueta: t.fkIdEtiqueta,
           fldNombre: t.fldNombre,
@@ -34,7 +29,7 @@ export class ClienteEtiquetasAdapter implements EtiquetasAdapter {
   obtenerDisponibles(): Observable<EtiquetaDisponible[]> {
     return this.etiquetasService.listarEtiquetas(1, 1000).pipe(
       map((res) =>
-        (res.cuerpoDeRespuesta ?? []).map((e) => ({
+        (res?.cuerpoDeRespuesta ?? []).map((e) => ({
           idEtiqueta: e.idEtiqueta,
           fldNombre: e.fldNombre,
           fldCategoria: e.fldCategoria,

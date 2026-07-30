@@ -57,6 +57,27 @@ export const routes: Routes = [
         path: 'establecimientos',
         loadComponent: () => import('./admin/pages/establecimientos/establecimientos.component').then(m => m.EstablecimientosComponent)
       },
+      {
+        path: 'marca',
+        loadComponent: () => import('./admin/pages/marca/marca.component').then(m => m.MarcaComponent)
+      },
+      {
+        path: 'tipos-establecimientos',
+        loadComponent: () => import('./admin/pages/tipos-establecimientos/tipos-establecimientos.component').then(m => m.TiposEstablecimientosComponent)
+      },
+      {
+        // ojo: la ruta vieja era /admin/CategoriaEtiqueta (PascalCase); esta va en minusculas
+        path: 'categoria-etiqueta',
+        loadComponent: () => import('./admin/pages/categoria-etiqueta/categoria-etiqueta.component').then(m => m.CategoriaEtiquetaComponent)
+      },
+      {
+        path: 'etiquetas',
+        loadComponent: () => import('./admin/pages/etiquetas/etiquetas.component').then(m => m.EtiquetasComponent)
+      },
+      {
+        path: 'promociones',
+        loadComponent: () => import('./admin/pages/promocion/promocion.component').then(m => m.PromocionComponent)
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },

@@ -1,0 +1,65 @@
+<section class="admin-page">
+  <div class="header-actions">
+    <h2>Categorías de etiqueta</h2>
+    <button type="button" class="create-btn" aria-label="Crear categoría de etiqueta" title="Crear categoría de etiqueta" (click)="abrirModalCrear()">
+      + Nueva
+    </button>
+  </div>
+
+  <app-data-table
+    [columns]="columns"
+    [data]="categoriasOrdenadas()"
+    [loading]="isLoading()"
+    emptyMessage="No hay categorías de etiqueta para mostrar."
+    [currentPage]="currentPage()"
+    [totalPages]="totalPages()"
+    [sortKey]="sortKey()"
+    [sortDirection]="sortDirection()"
+    (pageChange)="onPageChange($event)"
+    (sortChange)="onSortChange($event)"
+  >
+    <ng-template let-row>
+      <button type="button" class="edit-btn" [attr.aria-label]="'Editar ' + row.fldNombre" (click)="abrirModalEditar(row)">
+        Editar
+      </button>
+      <button type="button" class="delete-btn" [attr.aria-label]="'Eliminar ' + row.fldNombre" (click)="abrirModalEliminar(row)">
+        Eliminar
+      </button>
+    </ng-template>
+  </app-data-table>
+
+  <app-modal [open]="showFormModal()" [title]="modalTitle()" (closed)="cerrarModalFormulario()">
+    <form #categoriaForm="ngForm" (ngSubmit)="onSubmit(categoriaForm)" id="categoriaForm">
+      <app-text-field
+        label="Nombre"
+        name="fldNombre"
+        [(ngModel)]="categoria().fldNombre"
+        [required]="true"
+      ></app-text-field>
+
+      <app-textarea-field
+        label="Descripción"
+        name="fldDescripcion"
+        [rows]="3"
+        [(ngModel)]="categoria().fldDescripcion"
+      ></app-textarea-field>
+    </form>
+
+    <ng-container modal-footer>
+      <button type="button" class="btn-secondary" (click)="cerrarModalFormulario()" [disabled]="isSaving()">Cancelar</button>
+      <button type="submit" form="categoriaForm" class="btn-primary" [disabled]="categoriaForm.invalid || isSaving()">
+        {{ isSaving() ? 'Guardando...' : (modalMode() === 'edit' ? 'Actualizar' : 'Guardar') }}
+      </button>
+    </ng-container>
+  </app-modal>
+
+  <app-confirm-dialog
+    [open]="showDeleteModal()"
+    title="Confirmar eliminación"
+    message="¿Seguro que deseas eliminar la categoría"
+    [itemName]="categoriaAEliminar()?.fldNombre ?? null"
+    [loading]="isDeleting()"
+    (confirm)="confirmarEliminar()"
+    (cancel)="cerrarModalEliminar()"
+  ></app-confirm-dialog>
+</section>
