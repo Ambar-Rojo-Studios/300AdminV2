@@ -1,6 +1,6 @@
 window.__env = {
   "production": true,
-  "apiBaseUrl": "https://app300-lugares.onrender.com",
+  "apiBaseUrl": "https://ambarrojo-lugares-backend.yjuutv.easypanel.host",
   "tinymceApiKey": "vyd9f6lzy6nuczv9t2fywkmt9eqt1a105vfyi3l36zqqm5u7",
   "googleMapsApiKey": "AIzaSyCWNmsHV-WjD__L5gERIzsZh3983SoFtkg",
   "firebase": {
