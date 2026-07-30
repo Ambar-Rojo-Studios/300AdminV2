@@ -2,7 +2,7 @@
   <div class="header-actions">
     <h2>Establecimientos</h2>
     <button type="button" class="create-btn" aria-label="Crear establecimiento" title="Crear establecimiento" (click)="abrirModalCrear()">
-      + Nuevo
+      <i class="fa fa-plus" aria-hidden="true"></i>
     </button>
   </div>
 
@@ -20,10 +20,10 @@
   >
     <ng-template let-row>
       <button type="button" class="edit-btn" [attr.aria-label]="'Editar ' + row.fldNombre" (click)="abrirModalEditar(row)">
-        Editar
+        <i class="fas fa-edit" aria-hidden="true"></i>
       </button>
       <button type="button" class="delete-btn" [attr.aria-label]="'Eliminar ' + row.fldNombre" (click)="abrirModalEliminar(row)">
-        Eliminar
+        <i class="fas fa-trash" aria-hidden="true"></i>
       </button>
     </ng-template>
   </app-data-table>
