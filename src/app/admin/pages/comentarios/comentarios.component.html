@@ -1,0 +1,48 @@
+<section class="admin-page">
+  <div class="header-actions">
+    <h2>Moderación de comentarios</h2>
+  </div>
+
+  <div style="max-width:420px;margin-bottom:1rem;">
+    <app-select-field
+      label="Establecimiento"
+      [options]="establecimientos"
+      placeholder="Selecciona un establecimiento"
+      name="establecimientoId"
+      [ngModel]="establecimientoId()"
+      (ngModelChange)="onEstablecimientoChange($event)"
+    ></app-select-field>
+  </div>
+
+  @if (establecimientoId()) {
+    <app-data-table
+      [columns]="columns"
+      [data]="comentarios()"
+      [loading]="isLoading()"
+      emptyMessage="No hay comentarios para este establecimiento."
+      [currentPage]="currentPage()"
+      [totalPages]="totalPages()"
+      (pageChange)="onPageChange($event)"
+    >
+      <ng-template let-row>
+        <button type="button" class="delete-btn" [attr.aria-label]="'Eliminar comentario de ' + row.fldNombre" (click)="abrirModalEliminar(row)">
+          <i class="fas fa-trash" aria-hidden="true"></i>
+        </button>
+      </ng-template>
+    </app-data-table>
+  } @else {
+    <div class="no-data">
+      Selecciona un establecimiento para ver sus comentarios.
+    </div>
+  }
+
+  <app-confirm-dialog
+    [open]="showDeleteModal()"
+    title="Confirmar Eliminación"
+    message="¿Seguro que deseas eliminar el comentario de"
+    [itemName]="comentarioAEliminar()?.fldNombre ?? null"
+    [loading]="isDeleting()"
+    (confirm)="confirmarEliminar()"
+    (cancel)="cerrarModalEliminar()"
+  ></app-confirm-dialog>
+</section>

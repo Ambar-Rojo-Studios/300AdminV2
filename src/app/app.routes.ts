@@ -198,6 +198,27 @@ export const routes: Routes = [
             (m) => m.PromocionComponent
           ),
       },
+      {
+        path: 'capsulas',
+        loadComponent: () =>
+          import('./admin/pages/capsula/capsula.component').then(
+            (m) => m.CapsulaComponent
+          ),
+      },
+      {
+        path: 'historial',
+        loadComponent: () =>
+          import('./admin/pages/historial/historial.component').then(
+            (m) => m.HistorialComponent
+          ),
+      },
+      {
+        path: 'comentarios',
+        loadComponent: () =>
+          import('./admin/pages/comentarios/comentarios.component').then(
+            (m) => m.ComentariosComponent
+          ),
+      },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },
