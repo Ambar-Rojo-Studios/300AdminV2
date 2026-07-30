@@ -1,0 +1,96 @@
+<section class="admin-page">
+  <div class="header-actions">
+    <h2>Cuentas de botaneros</h2>
+    <button type="button" class="create-btn" aria-label="Crear cuenta de botanero" title="Crear cuenta de botanero" (click)="abrirModalCrear()">
+      <i class="fa fa-plus" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <app-data-table
+    [columns]="columns"
+    [data]="cuentasOrdenadas()"
+    [loading]="isLoading()"
+    emptyMessage="No hay cuentas de botanero todavía."
+    [currentPage]="1"
+    [totalPages]="1"
+    [sortKey]="sortKey()"
+    [sortDirection]="sortDirection()"
+    (sortChange)="onSortChange($event)"
+  >
+    <ng-template let-row>
+      <button type="button" class="delete-btn" [attr.aria-label]="'Eliminar ' + row.fldNombre" (click)="abrirModalEliminar(row)">
+        <i class="fas fa-trash" aria-hidden="true"></i>
+      </button>
+    </ng-template>
+  </app-data-table>
+
+  <app-modal [open]="showFormModal()" title="Nueva cuenta de botanero" (closed)="cerrarModalFormulario()">
+    <form [formGroup]="form" (ngSubmit)="crear()" id="cuentaForm">
+      <app-text-field
+        label="Nombre"
+        name="fldNombre"
+        formControlName="fldNombre"
+        [required]="true"
+        [invalid]="isInvalido('fldNombre')"
+        errorMessage="El nombre es obligatorio."
+      ></app-text-field>
+
+      <app-text-field
+        label="Teléfono"
+        name="fldTelefono"
+        formControlName="fldTelefono"
+        [required]="true"
+        [invalid]="isInvalido('fldTelefono')"
+        errorMessage="El teléfono es obligatorio."
+      ></app-text-field>
+
+      <app-text-field
+        label="Correo"
+        type="email"
+        name="fldCorreoElectronico"
+        formControlName="fldCorreoElectronico"
+        [required]="true"
+        [invalid]="isInvalido('fldCorreoElectronico')"
+        errorMessage="Ingresa un correo válido."
+      ></app-text-field>
+
+      <app-text-field
+        label="Contraseña"
+        type="password"
+        name="fldContrasenia"
+        formControlName="fldContrasenia"
+        [required]="true"
+        [invalid]="isInvalido('fldContrasenia')"
+        errorMessage="Mínimo 8 caracteres."
+      ></app-text-field>
+
+      <app-select-field
+        label="Empresa"
+        name="fkIdEmpresa"
+        placeholder="Selecciona la empresa"
+        [options]="empresaOptions()"
+        formControlName="fkIdEmpresa"
+        [required]="true"
+        [invalid]="isInvalido('fkIdEmpresa')"
+        errorMessage="Selecciona una empresa."
+      ></app-select-field>
+    </form>
+
+    <ng-container modal-footer>
+      <button type="button" class="btn-secondary" (click)="cerrarModalFormulario()" [disabled]="isSaving()">Cancelar</button>
+      <button type="submit" form="cuentaForm" class="btn-primary" [disabled]="form.invalid || isSaving()">
+        {{ isSaving() ? 'Guardando...' : 'Guardar' }}
+      </button>
+    </ng-container>
+  </app-modal>
+
+  <app-confirm-dialog
+    [open]="showDeleteModal()"
+    title="Confirmar eliminación"
+    message="¿Seguro que deseas eliminar la cuenta de"
+    [itemName]="cuentaAEliminar()?.fldNombre ?? null"
+    [loading]="isDeleting()"
+    (confirm)="confirmarEliminar()"
+    (cancel)="cerrarModalEliminar()"
+  ></app-confirm-dialog>
+</section>

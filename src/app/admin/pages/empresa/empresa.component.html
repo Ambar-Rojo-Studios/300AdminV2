@@ -33,23 +33,32 @@
       <app-text-field
         label="Nombre"
         name="fldNombre"
+        #fldNombre="ngModel"
         [(ngModel)]="empresa().fldNombre"
         [required]="true"
+        [invalid]="!!(fldNombre.invalid && fldNombre.touched)"
+        errorMessage="El nombre es obligatorio."
       ></app-text-field>
 
       <app-text-field
         label="Teléfono"
         name="fldTelefono"
+        #fldTelefono="ngModel"
         [(ngModel)]="empresa().fldTelefono"
         [required]="true"
+        [invalid]="!!(fldTelefono.invalid && fldTelefono.touched)"
+        errorMessage="El teléfono es obligatorio."
       ></app-text-field>
 
       <app-text-field
         label="Correo"
         type="email"
         name="fldCorreoElectronico"
+        #fldCorreoElectronico="ngModel"
         [(ngModel)]="empresa().fldCorreoElectronico"
         [required]="true"
+        [invalid]="!!(fldCorreoElectronico.invalid && fldCorreoElectronico.touched)"
+        errorMessage="El correo es obligatorio."
       ></app-text-field>
 
       <app-text-field
