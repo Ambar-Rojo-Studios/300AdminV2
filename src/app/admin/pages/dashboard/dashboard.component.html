@@ -1,0 +1,25 @@
+<section class="admin-page">
+  <div class="header-actions">
+    <h2>Dashboard</h2>
+  </div>
+
+  <div class="dashboard-grid">
+    @for (kpi of kpis(); track kpi.key) {
+      <div class="card kpi-card">
+        <div class="kpi-icon">
+          <i class="fas {{ kpi.icon }}" aria-hidden="true"></i>
+        </div>
+        <div class="kpi-body">
+          @if (kpi.loading) {
+            <span class="loading-spinner" role="status" aria-label="Cargando"></span>
+          } @else if (kpi.error) {
+            <span class="kpi-error"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Error</span>
+          } @else {
+            <span class="kpi-value">{{ kpi.value }}</span>
+          }
+          <span class="kpi-label">{{ kpi.label }}</span>
+        </div>
+      </div>
+    }
+  </div>
+</section>
