@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse, HttpParams} from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, catchError, throwError } from 'rxjs';
+import { Observable, catchError, throwError, map } from 'rxjs';
 import { ApiResponseMarca, MarcaCreateDTO, MarcaEditDTO, MarcaListDTO } from '../models/marcas.model';
 
 @Injectable({
@@ -47,13 +47,35 @@ export class MarcasService {
     eliminarMarca(id: number): 
     Observable<ApiResponseMarca<any>> {
         const url = `${this.deleteUrl}?id=${id}`;
-        return this.http.delete<ApiResponseMarca<any>>(url).pipe(
+        // El backend a veces regresa el cuerpo VACÍO en el DELETE (éxito igual);
+        // pedimos texto crudo para que Angular no truene intentando parsear JSON de la nada.
+        return this.http.delete(url, { responseType: 'text' }).pipe(
+            map((texto) => this.parseRespuestaDelete(texto)),
             catchError(this.handleError)
         );
+    }
+
+    private parseRespuestaDelete(texto: string): ApiResponseMarca<any> {
+        if (!texto) return { codigoEstatus: 1, mensaje: 'Eliminado correctamente.', cuerpoDeRespuesta: null };
+        try {
+            return JSON.parse(texto);
+        } catch {
+            return { codigoEstatus: 1, mensaje: 'Eliminado correctamente.', cuerpoDeRespuesta: null };
+        }
     }
     
     private handleError(error: HttpErrorResponse) {
         console.error('❌ [Service] Ocurrió un error en la API:', error);
-        return throwError(() => new Error(error.error?.mensaje || 'Error desconocido del servidor'));
+        let mensaje = 'Error desconocido del servidor';
+        if (typeof error.error === 'string') {
+            try {
+                mensaje = JSON.parse(error.error)?.mensaje || mensaje;
+            } catch {
+                // no era JSON, se queda el mensaje genérico
+            }
+        } else if (error.error?.mensaje) {
+            mensaje = error.error.mensaje;
+        }
+        return throwError(() => new Error(mensaje));
     }
 }

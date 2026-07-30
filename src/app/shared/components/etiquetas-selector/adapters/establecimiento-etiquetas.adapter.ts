@@ -23,7 +23,7 @@ export class EstablecimientoEtiquetasAdapter implements EtiquetasAdapter {
       .obtenerEtiquetasPorEstablecimiento(establecimientoId)
       .pipe(
         map((res) =>
-          (res.cuerpoDeRespuesta ?? []).map((t) => ({
+          (res?.cuerpoDeRespuesta ?? []).map((t) => ({
             id: t.id,
             idEtiqueta: t.idEtiqueta,
             fldNombre: t.fldNombre,
@@ -36,7 +36,7 @@ export class EstablecimientoEtiquetasAdapter implements EtiquetasAdapter {
   obtenerDisponibles(): Observable<EtiquetaDisponible[]> {
     return this.etiquetasService.listarEtiquetas(1, 1000).pipe(
       map((res) =>
-        (res.cuerpoDeRespuesta ?? []).map((e) => ({
+        (res?.cuerpoDeRespuesta ?? []).map((e) => ({
           idEtiqueta: e.idEtiqueta,
           fldNombre: e.fldNombre,
           fldCategoria: e.fldCategoria,
