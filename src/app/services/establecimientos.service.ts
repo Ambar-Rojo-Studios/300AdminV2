@@ -1,7 +1,7 @@
 // src/app/services/establecimientos.services.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
-import { Observable, catchError, throwError, firstValueFrom } from 'rxjs';
+import { Observable, catchError, throwError, firstValueFrom, map } from 'rxjs';
 import {ApiResponseEstablecimiento,EstablecimientoCreateDTO,EstablecimientoEditDTO,EstablecimientoListDTO,
 EstablecimientoResponseDTO,idEstablecimiento} from '../models/establecimiento.model';
 
@@ -97,25 +97,16 @@ export class EstablecimientosService {
 
     formData.append('datos', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
 
-    if(foto){
-      formData.append('foto', foto, foto.name);
-    }
+    // El backend espera el campo "perfil" repetido una vez por cada imagen (máx. 5),
+    // NO "foto"/"foto2"/"foto3"/"foto4". El orden de envío es el orden en que quedan guardadas.
+    [foto, foto2, foto3, foto4].forEach((f) => {
+      if (f) formData.append('perfil', f, f.name);
+    });
 
-    if (foto2) {
-      formData.append('foto2', foto2, foto2.name);
+    // El backend espera el campo "menu" repetido una vez por cada archivo (máx. 2).
+    if (menu) {
+      formData.append('menu', menu, menu.name);
     }
-
-    if (foto3) {
-      formData.append('foto3', foto3, foto3.name);
-    }
-
-    if (foto4) {
-      formData.append('foto4', foto4, foto4.name);
-    }
-
-    if (menu){ 
-      formData.append('menu', menu, menu.name)
-    };
 
     return this.http.post<ApiResponseEstablecimiento<EstablecimientoListDTO>>(
       this.crearUrl,
@@ -147,21 +138,10 @@ export class EstablecimientosService {
 
     formData.append('datos', new Blob([JSON.stringify(data)], { type: 'application/json' }));
 
-    if (foto) {
-      formData.append('foto', foto, foto.name);
-    }
-
-    if (foto2) {
-      formData.append('foto2', foto2, foto2.name);
-    }
-
-    if (foto3) {
-      formData.append('foto3', foto3, foto3.name);
-    }
-
-    if (foto4) {
-      formData.append('foto4', foto4, foto4.name);
-    }
+    // Igual que en createEstablecimiento: el backend espera "perfil" repetido por archivo, no "foto"/"foto2"/etc.
+    [foto, foto2, foto3, foto4].forEach((f) => {
+      if (f) formData.append('perfil', f, f.name);
+    });
 
     if (menu) {
       formData.append('menu', menu, menu.name);
@@ -175,9 +155,21 @@ export class EstablecimientosService {
 
   deleteEstablecimiento(id: number): Observable<ApiResponseEstablecimiento<any>> {
      const url = `${this.deleteUrl}?id=${id}`;
-        return this.http.delete<ApiResponseEstablecimiento<any>>(url).pipe(
+        // El backend a veces regresa el cuerpo VACÍO en el DELETE (éxito igual);
+        // pedimos texto crudo para que Angular no truene intentando parsear JSON de la nada.
+        return this.http.delete(url, { responseType: 'text' }).pipe(
+          map((texto) => this.parseRespuestaDelete(texto)),
           catchError(this.handleError)
       );
+  }
+
+  private parseRespuestaDelete(texto: string): ApiResponseEstablecimiento<any> {
+    if (!texto) return { codigoEstatus: 1, mensaje: 'Eliminado correctamente.', cuerpoDeRespuesta: null };
+    try {
+      return JSON.parse(texto);
+    } catch {
+      return { codigoEstatus: 1, mensaje: 'Eliminado correctamente.', cuerpoDeRespuesta: null };
+    }
   }
 
   obtenerTodosEstablecimientos(): Observable<ApiResponseEstablecimiento<EstablecimientoListDTO[]>> {

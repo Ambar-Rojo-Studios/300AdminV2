@@ -1,0 +1,65 @@
+<section class="admin-page">
+  <div class="header-actions">
+    <h2>Marcas</h2>
+    <button type="button" class="create-btn" aria-label="Crear marca" title="Crear marca" (click)="abrirModalCrear()">
+      + Nueva
+    </button>
+  </div>
+
+  <app-data-table
+    [columns]="columns"
+    [data]="marcasOrdenadas()"
+    [loading]="isLoading()"
+    emptyMessage="No hay marcas para mostrar."
+    [currentPage]="currentPage()"
+    [totalPages]="totalPages()"
+    [sortKey]="sortKey()"
+    [sortDirection]="sortDirection()"
+    (pageChange)="onPageChange($event)"
+    (sortChange)="onSortChange($event)"
+  >
+    <ng-template let-row>
+      <button type="button" class="edit-btn" [attr.aria-label]="'Editar ' + row.fldNombre" (click)="abrirModalEditar(row)">
+        Editar
+      </button>
+      <button type="button" class="delete-btn" [attr.aria-label]="'Eliminar ' + row.fldNombre" (click)="abrirModalEliminar(row)">
+        Eliminar
+      </button>
+    </ng-template>
+  </app-data-table>
+
+  <app-modal [open]="showFormModal()" [title]="modalTitle()" (closed)="cerrarModalFormulario()">
+    <form #marcaForm="ngForm" (ngSubmit)="onSubmit(marcaForm)" id="marcaForm">
+      <app-text-field
+        label="Nombre"
+        name="fldNombre"
+        [(ngModel)]="marca().fldNombre"
+        [required]="true"
+      ></app-text-field>
+
+      <app-textarea-field
+        label="Descripción"
+        name="fldDescripcion"
+        [rows]="3"
+        [(ngModel)]="marca().fldDescripcion"
+      ></app-textarea-field>
+    </form>
+
+    <ng-container modal-footer>
+      <button type="button" class="btn-secondary" (click)="cerrarModalFormulario()" [disabled]="isSaving()">Cancelar</button>
+      <button type="submit" form="marcaForm" class="btn-primary" [disabled]="marcaForm.invalid || isSaving()">
+        {{ isSaving() ? 'Guardando...' : (modalMode() === 'edit' ? 'Actualizar' : 'Guardar') }}
+      </button>
+    </ng-container>
+  </app-modal>
+
+  <app-confirm-dialog
+    [open]="showDeleteModal()"
+    title="Confirmar eliminación"
+    message="¿Seguro que deseas eliminar la marca"
+    [itemName]="marcaAEliminar()?.fldNombre ?? null"
+    [loading]="isDeleting()"
+    (confirm)="confirmarEliminar()"
+    (cancel)="cerrarModalEliminar()"
+  ></app-confirm-dialog>
+</section>

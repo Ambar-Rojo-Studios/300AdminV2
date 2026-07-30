@@ -52,7 +52,11 @@ export interface Coords {
   lng: string;
 }
 
-type ModoMapa = 'ver' | 'seleccionar';
+/** Alias retrocompatible con el esqueleto (v1 lo llamaba MapaEstablecimientoCoords). */
+export type MapaEstablecimientoCoords = Coords;
+
+type ModoMapa = 'ver' | 'seleccionar' | 'crear' | 'editar';
+type ModoMapaNormalizado = 'ver' | 'seleccionar';
 
 /**
  * Componente UNIFICADO de mapa que reemplaza a las 5 variantes de v1:
@@ -136,8 +140,20 @@ export class MapaEstablecimientoComponent
   // Lifecycle
   // ---------------------------------------------------------------
 
-  ngAfterViewInit(): void {
+  async ngAfterViewInit(): Promise<void> {
     this.initMap();
+  }
+
+  /**
+   * Los modos `'crear'` y `'editar'` son heredados de la API del esqueleto
+   * v1 (modo selección). Se tratan igual que `'seleccionar'`.
+   */
+  esModoSeleccion(): boolean {
+    return (
+      this.modo === 'seleccionar' ||
+      this.modo === 'crear' ||
+      this.modo === 'editar'
+    );
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -150,7 +166,7 @@ export class MapaEstablecimientoComponent
     if (changes['establecimientoId'] && this.establecimientoId != null) {
       this.renderSingle(this.establecimientoId);
     }
-    if (changes['coords'] && this.modo === 'seleccionar') {
+    if (changes['coords'] && this.esModoSeleccion()) {
       this.renderSeleccion(this.coords);
     }
   }
@@ -193,7 +209,7 @@ export class MapaEstablecimientoComponent
       this.ready.emit();
 
       // Primera renderización según inputs que vengan seteados.
-      if (this.modo === 'seleccionar' && this.coords) {
+      if (this.esModoSeleccion() && this.coords) {
         this.renderSeleccion(this.coords);
       } else if (this.establecimientos?.length) {
         this.renderLista(this.establecimientos);
@@ -493,7 +509,7 @@ export class MapaEstablecimientoComponent
       );
       return;
     }
-    if (this.modo === 'seleccionar' && this.establecimientos?.length) {
+    if (this.esModoSeleccion() && this.establecimientos?.length) {
       console.warn(
         '[MapaEstablecimiento] modo=seleccionar con establecimientos: ignorando establecimientos'
       );

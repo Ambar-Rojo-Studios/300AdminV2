@@ -1,0 +1,79 @@
+@if (loading()) {
+  <div class="no-data">
+    <span class="loading-spinner" aria-hidden="true"></span>
+    Cargando...
+  </div>
+} @else if (data().length === 0) {
+  <div class="no-data">
+    {{ emptyMessage() }}
+  </div>
+} @else {
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          @for (column of columns(); track column.key) {
+            <th
+              [style.width]="column.width || null"
+              [style.textAlign]="column.align || 'left'"
+              [class.sortable-th]="column.sortable"
+              [attr.aria-sort]="sortKey() === column.key && sortDirection() ? (sortDirection() === 'asc' ? 'ascending' : 'descending') : null"
+              (click)="onHeaderClick(column)"
+            >
+              <span style="display:inline-flex;align-items:center;gap:6px;cursor:inherit;">
+                {{ column.label }}
+                @if (column.sortable) {
+                  <i class="fas {{ sortIcon(column) }}" aria-hidden="true" style="font-size:0.75em;opacity:.7;"></i>
+                }
+              </span>
+            </th>
+          }
+          @if (rowActionsTpl) {
+            <th class="col-actions" style="text-align:right;">{{ actionsLabel() }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of data(); track trackByFn()($index, row)) {
+          <tr>
+            @for (column of columns(); track column.key) {
+              <td [style.textAlign]="column.align || 'left'">{{ cellValue(row, column) }}</td>
+            }
+            @if (rowActionsTpl) {
+              <td class="actions-cell" style="justify-content:flex-end;">
+                <ng-container
+                  [ngTemplateOutlet]="rowActionsTpl"
+                  [ngTemplateOutletContext]="{ $implicit: row, index: $index }"
+                ></ng-container>
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1) {
+    <div class="pagination-controls">
+      <button
+        type="button"
+        aria-label="Página anterior"
+        (click)="prevPage()"
+        [disabled]="currentPage() <= 1"
+      >
+        <i class="fas fa-chevron-left" aria-hidden="true"></i>
+      </button>
+
+      <span>Página {{ currentPage() }} de {{ totalPages() }}</span>
+
+      <button
+        type="button"
+        aria-label="Página siguiente"
+        (click)="nextPage()"
+        [disabled]="currentPage() >= totalPages()"
+      >
+        <i class="fas fa-chevron-right" aria-hidden="true"></i>
+      </button>
+    </div>
+  }
+}

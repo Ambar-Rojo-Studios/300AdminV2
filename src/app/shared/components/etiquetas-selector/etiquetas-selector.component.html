@@ -1,0 +1,66 @@
+<div>
+  @if (errorMessage()) {
+    <div class="message error">{{ errorMessage() }}</div>
+  }
+  @if (successMessage()) {
+    <div class="message success">{{ successMessage() }}</div>
+  }
+
+  @if (!readonly()) {
+    <div style="display:flex;gap:12px;align-items:flex-end;">
+      <div style="flex:1;">
+        <app-select-field
+          label="Agregar etiqueta"
+          placeholder="Selecciona una etiqueta"
+          [options]="opcionesDisponibles()"
+          [(ngModel)]="etiquetaSeleccionada"
+          name="etiquetaSeleccionada"
+        ></app-select-field>
+      </div>
+      <button
+        type="button"
+        class="btn-primary"
+        style="margin-bottom:18px;"
+        [disabled]="!puedeGuardar()"
+        (click)="agregarEtiqueta()"
+      >
+        {{ guardando() ? 'Agregando...' : 'Agregar' }}
+      </button>
+    </div>
+  }
+
+  @if (cargando()) {
+    <div class="no-data">
+      <span class="loading-spinner" aria-hidden="true"></span>
+      Cargando etiquetas...
+    </div>
+  } @else if (etiquetasAsociadas().length === 0) {
+    <div class="no-data">Esta entidad todavía no tiene etiquetas.</div>
+  } @else {
+    @for (categoria of categorias(); track categoria) {
+      <div style="margin-bottom:16px;">
+        <h3 style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.04em;">
+          {{ categoria }}
+        </h3>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          @for (etiqueta of etiquetasPorCategoria()[categoria]; track etiqueta.id) {
+            <span class="badge badge-neutral">
+              {{ etiqueta.fldNombre }}
+              @if (!readonly()) {
+                <button
+                  type="button"
+                  aria-label="Quitar etiqueta"
+                  [disabled]="eliminandoId() === etiqueta.id"
+                  (click)="eliminarEtiqueta(etiqueta)"
+                  style="background:none;border:none;cursor:pointer;color:inherit;padding:0;margin-left:2px;line-height:1;"
+                >
+                  &times;
+                </button>
+              }
+            </span>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>

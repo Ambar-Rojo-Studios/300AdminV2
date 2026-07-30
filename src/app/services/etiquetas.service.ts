@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
-import { Observable, catchError, throwError } from 'rxjs';
+import { Observable, catchError, throwError, map } from 'rxjs';
 import { ApiResponseEtiqueta, EditEtiquetaDTO, CreateEtiquetaDTO, ListEtiquetaDTO, ListCategoriaConEtiquetasDTO } from '../models/etiquetas.model';
 
 @Injectable({
@@ -48,15 +48,35 @@ export class EtiquetasService {
 
   eliminarEtiqueta(id: number): Observable<ApiResponseEtiqueta<any>> {
     const url = `${this.eliminarUrl}?id=${id}`;
-    return this.http.delete<ApiResponseEtiqueta<any>>(url).pipe(
+    return this.http.delete(url, { responseType: 'text' }).pipe(
+      map((texto) => this.parseRespuestaDelete(texto)),
       catchError(this.handleError)
     );
+  }
+
+  private parseRespuestaDelete(texto: string): ApiResponseEtiqueta<any> {
+    if (!texto) return { codigoEstatus: 1, mensaje: 'Eliminado correctamente.', cuerpoDeRespuesta: null };
+    try {
+      return JSON.parse(texto);
+    } catch {
+      return { codigoEstatus: 1, mensaje: 'Eliminado correctamente.', cuerpoDeRespuesta: null };
+    }
   }
 
 
   private handleError(error: HttpErrorResponse) {
     console.error('❌ [Service] Ocurrió un error en la API:', error);
-    return throwError(() => new Error(error.error?.mensaje || 'Error desconocido del servidor'));
+    let mensaje = 'Error desconocido del servidor';
+    if (typeof error.error === 'string') {
+      try {
+        mensaje = JSON.parse(error.error)?.mensaje || mensaje;
+      } catch {
+        // no era JSON, se queda el mensaje genérico
+      }
+    } else if (error.error?.mensaje) {
+      mensaje = error.error.mensaje;
+    }
+    return throwError(() => new Error(mensaje));
   }
 
 }

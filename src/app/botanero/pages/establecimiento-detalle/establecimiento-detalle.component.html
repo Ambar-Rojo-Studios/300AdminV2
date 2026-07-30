@@ -1,0 +1,63 @@
+<a routerLink="/mi-lugar" class="volver">← Mis establecimientos</a>
+
+@if (cargando()) {
+  <app-loading-spinner />
+} @else if (error()) {
+  <p class="error">{{ error() }}</p>
+} @else if (lugar(); as l) {
+  <header class="detalle-header">
+    <h1>{{ l.fldNombre }}</h1>
+    <p>{{ l.fldDireccion }}, {{ l.fldCiudad }}</p>
+  </header>
+
+  <div class="acciones">
+    <button type="button" (click)="abrirModalEditar()">Editar información</button>
+    <button type="button" disabled title="Se maneja aparte, con BotaneroPromosDTO">Editar promos</button>
+  </div>
+
+  <section>
+    <h2>Estadísticas</h2>
+    @if (stats(); as s) {
+      <dl class="stats">
+        <div><dt>Calificación</dt><dd>{{ s.calificacionPromedio }}</dd></div>
+        <div><dt>Comentarios</dt><dd>{{ s.totalComentarios }}</dd></div>
+        <div><dt>Canjes</dt><dd>{{ s.totalCanjes }}</dd></div>
+      </dl>
+    } @else {
+      <p class="pendiente">Sin datos de estadísticas.</p>
+    }
+  </section>
+
+  <section>
+    <h2>Comentarios de clientes</h2>
+    @if (comentarios().length === 0) {
+      <p class="pendiente">Aún no hay comentarios.</p>
+    } @else {
+      <ul class="comentarios">
+        @for (c of comentarios(); track c.idComentario) {
+          <li>
+            <strong>{{ c.fldNombre }}</strong> · {{ c.fldEstrellas }}★ · {{ c.fldFechaComentario }}
+            <p>{{ c.fldComentario }}</p>
+          </li>
+        }
+      </ul>
+    }
+  </section>
+
+  <app-modal [open]="showFormModal()" title="Editar información" size="lg" (closed)="cerrarModalEditar()">
+    <app-establecimiento-form
+      mode="botanero"
+      formId="establecimientoFormBotanero"
+      [value]="formValue()"
+      [saving]="guardando()"
+      (formSubmit)="onEstablecimientoSubmit($event)"
+    ></app-establecimiento-form>
+
+    <ng-container modal-footer>
+      <button type="button" class="btn-secondary" (click)="cerrarModalEditar()" [disabled]="guardando()">Cancelar</button>
+      <button type="submit" form="establecimientoFormBotanero" class="btn-primary" [disabled]="guardando()">
+        {{ guardando() ? 'Guardando...' : 'Actualizar' }}
+      </button>
+    </ng-container>
+  </app-modal>
+}

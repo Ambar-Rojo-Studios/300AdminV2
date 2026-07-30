@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse, HttpParams} from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, catchError, throwError, firstValueFrom } from 'rxjs';
+import { Observable, catchError, throwError, firstValueFrom, map } from 'rxjs';
 import { listarPromocionesDTO, CrearPromocionDTO, EditarPromocionDTO, ApiResponsivePromocion} from '../models/promocion.model';
 
 @Injectable({
@@ -40,7 +40,10 @@ export class PromocionesService {
   }
 
   eliminarPromocion(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.deleteUrl}?id=${id}`).pipe(
+    // El backend a veces regresa el cuerpo VACÍO en el DELETE (éxito igual);
+    // pedimos texto crudo para que Angular no truene intentando parsear JSON de la nada.
+    return this.http.delete(`${this.deleteUrl}?id=${id}`, { responseType: 'text' }).pipe(
+      map(() => undefined),
       catchError(this.handleError)
     );
   }

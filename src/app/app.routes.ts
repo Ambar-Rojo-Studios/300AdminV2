@@ -6,18 +6,19 @@ import { createRoleGuard } from './auth/guards/role.guard';
 /**
  * Rutas de 300 Lugares v2.
  *
- * Estructura base aportada por el esqueleto (layouts + auth + guards).
- * Rutas del mapa unificado añadidas en la rama `mapa`:
+ * Fusion de:
+ *   - Esqueleto (main): layouts + auth + guards + CRUDs admin + portal botanero
+ *   - Agente (mapa):  web publica completa + admin/establecimiento form
+ *
+ * Rutas del mapa unificado (agente):
  *   - `mapa`                     (público, fullscreen)
  *   - `mapa-filtro`              (público, filtros + mapa)
+ *   - `buscar`                   (público, buscador + mapa)
  *   - `detalleEstablecimiento/:id` (público, single-by-id)
  *   - `admin/establecimiento`    (admin, form selección de coords)
  *
- * El path `''` (inicio) estaba como placeholder en el esqueleto; se
- * reemplazó por `InicioComponent` completo (carga HTTP + mapa + navigate).
- *
- * Convención: lazy-load con `loadComponent` (AGENTS.md §5.2 #5). Sin
- * `NgModule`. Rutas admin/botanero con `authGuard` + `createRoleGuard`.
+ * Convencion: lazy-load con `loadComponent` (AGENTS.md §5.2 #5).
+ * Sin `NgModule`. Rutas admin/botanero con `authGuard` + `createRoleGuard`.
  */
 export const routes: Routes = [
   // ── Web pública (public-layout) ───────────────────────────────
@@ -109,12 +110,6 @@ export const routes: Routes = [
         './auth/components/password-reset-controller/components/validate-code/validate-code.component'
       ).then((m) => m.ValidateCode),
   },
-  // Nota: `reset-password` no se registra aún porque el componente del
-  // esqueleto está completamente comentado (stub pendiente). Cuando el
-  // humano del esqueleto lo implemente, añadir aquí:
-  //   { path: 'reset-password', loadComponent: () =>
-  //       import('.../reset-password/reset-password.component')
-  //         .then(m => m.ResetPasswordComponent) }
   {
     path: 'unauthorized',
     loadComponent: () =>
@@ -147,12 +142,61 @@ export const routes: Routes = [
           ).then((m) => m.CuentasBotaneroComponent),
       },
       {
+        path: 'empresas',
+        loadComponent: () =>
+          import('./admin/pages/empresa/empresa.component').then(
+            (m) => m.EmpresaComponent
+          ),
+      },
+      {
+        path: 'establecimientos',
+        loadComponent: () =>
+          import(
+            './admin/pages/establecimientos/establecimientos.component'
+          ).then((m) => m.EstablecimientosComponent),
+      },
+      {
         path: 'establecimiento',
         title: 'Admin — Establecimiento',
         loadComponent: () =>
           import(
             './admin/pages/establecimiento/establecimiento-form.component'
           ).then((m) => m.EstablecimientoFormComponent),
+      },
+      {
+        path: 'marca',
+        loadComponent: () =>
+          import('./admin/pages/marca/marca.component').then(
+            (m) => m.MarcaComponent
+          ),
+      },
+      {
+        path: 'tipos-establecimientos',
+        loadComponent: () =>
+          import(
+            './admin/pages/tipos-establecimientos/tipos-establecimientos.component'
+          ).then((m) => m.TiposEstablecimientosComponent),
+      },
+      {
+        path: 'categoria-etiqueta',
+        loadComponent: () =>
+          import(
+            './admin/pages/categoria-etiqueta/categoria-etiqueta.component'
+          ).then((m) => m.CategoriaEtiquetaComponent),
+      },
+      {
+        path: 'etiquetas',
+        loadComponent: () =>
+          import('./admin/pages/etiquetas/etiquetas.component').then(
+            (m) => m.EtiquetasComponent
+          ),
+      },
+      {
+        path: 'promociones',
+        loadComponent: () =>
+          import('./admin/pages/promocion/promocion.component').then(
+            (m) => m.PromocionComponent
+          ),
       },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],

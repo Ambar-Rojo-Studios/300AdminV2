@@ -1,6 +1,6 @@
 <section class="mapa-establecimiento-container">
 
-  @if (modo === 'seleccionar' && showLinkInput) {
+  @if (esModoSeleccion() && showLinkInput) {
     <!-- Sección de Coordenadas y Enlace de Google Maps (solo modo selección) -->
     <div class="coords-section">
       <div class="form-group">
@@ -94,7 +94,7 @@
         </div>
       }
 
-      @if (modo === 'seleccionar') {
+      @if (esModoSeleccion()) {
         <div class="map-instructions">
           <i class="fas fa-info-circle"></i>
           <span>Arrastra el marcador para ajustar la ubicación</span>

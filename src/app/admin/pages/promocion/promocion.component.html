@@ -1,0 +1,205 @@
+<section class="admin-page">
+  <div class="header-actions">
+    <h2>Promociones</h2>
+    <button type="button" class="create-btn" aria-label="Crear promoción" title="Crear promoción" (click)="abrirModalCrear()">
+      + Nueva
+    </button>
+  </div>
+
+  <app-data-table
+    [columns]="columns"
+    [data]="promocionesOrdenadas()"
+    [loading]="isLoading()"
+    emptyMessage="No hay promociones para mostrar."
+    [currentPage]="currentPage()"
+    [totalPages]="totalPages()"
+    [sortKey]="sortKey()"
+    [sortDirection]="sortDirection()"
+    (pageChange)="onPageChange($event)"
+    (sortChange)="onSortChange($event)"
+  >
+    <ng-template let-row>
+      <button type="button" class="edit-btn" [attr.aria-label]="'Editar ' + row.fldNombre" (click)="abrirModalEditar(row)">
+        Editar
+      </button>
+      <button type="button" class="delete-btn" [attr.aria-label]="'Eliminar ' + row.fldNombre" (click)="abrirModalEliminar(row)">
+        Eliminar
+      </button>
+    </ng-template>
+  </app-data-table>
+
+  <app-modal [open]="showFormModal()" [title]="modalTitle()" size="lg" (closed)="cerrarModalFormulario()">
+    <form #promocionForm="ngForm" (ngSubmit)="onSubmit(promocionForm)" id="promocionForm">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">
+        <div>
+          <app-text-field
+            label="Nombre"
+            name="fldNombre"
+            [(ngModel)]="promocion().fldNombre"
+            [required]="true"
+          ></app-text-field>
+
+          <app-textarea-field
+            label="Descripción"
+            name="fldDescripcion"
+            [rows]="3"
+            [(ngModel)]="promocion().fldDescripcion"
+          ></app-textarea-field>
+
+          <app-select-field
+            label="Establecimiento"
+            name="fkIdEstablecimiento"
+            placeholder="Selecciona un establecimiento"
+            [options]="establecimientoOptions()"
+            [(ngModel)]="promocion().fkIdEstablecimiento"
+            [required]="true"
+          ></app-select-field>
+
+          <app-select-field
+            label="Suscripción"
+            name="fkIdSuscripcion"
+            placeholder="Selecciona una suscripción"
+            [options]="suscripcionOptions()"
+            [(ngModel)]="promocion().fkIdSuscripcion"
+            [required]="true"
+          ></app-select-field>
+
+          <app-select-field
+            label="Tipo de promoción"
+            name="tipoPromocion"
+            placeholder="Selecciona un tipo"
+            [options]="tipoPromocionOptions"
+            [(ngModel)]="promocion().tipoPromocion"
+          ></app-select-field>
+        </div>
+
+        <div>
+          <div style="display:flex;gap:12px;">
+            <div style="flex:1;">
+              <app-text-field
+                label="Fecha inicio"
+                type="date"
+                name="fldFechaInicio"
+                [(ngModel)]="promocion().fldFechaInicio"
+                [required]="true"
+              ></app-text-field>
+            </div>
+            <div style="flex:1;">
+              <app-text-field
+                label="Fecha fin"
+                type="date"
+                name="fldFechaFin"
+                [(ngModel)]="promocion().fldFechaFin"
+                [required]="true"
+              ></app-text-field>
+            </div>
+          </div>
+
+          <app-text-field
+            label="Código de validación"
+            name="fldCodigoValidacion"
+            [(ngModel)]="promocion().fldCodigoValidacion"
+            [required]="true"
+          ></app-text-field>
+
+          <div class="form-group">
+            <label>Días disponibles</label>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;">
+              @for (dia of diasSemana; track dia.value) {
+                <label style="display:flex;align-items:center;gap:6px;font-weight:400;">
+                  <input
+                    type="checkbox"
+                    [checked]="promocion().diasDisponibles?.includes(dia.value)"
+                    (change)="toggleDia(dia.value, $any($event.target).checked)"
+                  />
+                  {{ dia.label }}
+                </label>
+              }
+            </div>
+          </div>
+
+          <app-file-field
+            label="Imagen de la promoción"
+            hint="JPG o PNG"
+            [previewUrl]="imagenPreview()"
+            (fileChange)="onImagenSeleccionada($event)"
+          ></app-file-field>
+        </div>
+      </div>
+    </form>
+
+    <ng-container modal-footer>
+      <button type="button" class="btn-secondary" (click)="cerrarModalFormulario()" [disabled]="isSaving()">Cancelar</button>
+      <button type="submit" form="promocionForm" class="btn-primary" [disabled]="promocionForm.invalid || isSaving()">
+        {{ isSaving() ? 'Guardando...' : (modalMode() === 'edit' ? 'Actualizar' : 'Guardar') }}
+      </button>
+    </ng-container>
+  </app-modal>
+
+  <app-confirm-dialog
+    [open]="showDeleteModal()"
+    title="Confirmar eliminación"
+    message="¿Seguro que deseas eliminar la promoción"
+    [itemName]="promocionAEliminar()?.fldNombre ?? null"
+    [loading]="isDeleting()"
+    (confirm)="confirmarEliminar()"
+    (cancel)="cerrarModalEliminar()"
+  ></app-confirm-dialog>
+</section>
+
+<section class="admin-page" style="margin-top:32px;">
+  <div class="header-actions">
+    <h2>Promos por establecimiento</h2>
+  </div>
+  <p style="color:var(--text-muted);font-size:0.85rem;margin-top:-8px;margin-bottom:16px;">
+    Textos de promoción por día de la semana y la promo especial "&gt; 300 Lugares" que se muestran en cada establecimiento.
+  </p>
+
+  <app-data-table
+    [columns]="establecimientosColumns"
+    [data]="establecimientosOrdenados()"
+    [loading]="isLoading()"
+    emptyMessage="No hay establecimientos para mostrar."
+    [currentPage]="1"
+    [totalPages]="1"
+    [sortKey]="establecimientosSortKey()"
+    [sortDirection]="establecimientosSortDirection()"
+    (sortChange)="onEstablecimientosSortChange($event)"
+  >
+    <ng-template let-row>
+      <button type="button" class="edit-btn" [attr.aria-label]="'Editar promos de ' + row.fldNombre" (click)="abrirModalPromosDias(row)">
+        Editar promos
+      </button>
+    </ng-template>
+  </app-data-table>
+
+  <app-modal [open]="showPromosDiasModal()" title="Editar promos del establecimiento" size="lg" (closed)="cerrarModalPromosDias()">
+    <form #promosDiasFormRef="ngForm" (ngSubmit)="onSubmitPromosDias(promosDiasFormRef)" id="promosDiasForm">
+      <div style="display:flex;flex-wrap:wrap;gap:0 16px;">
+        @for (dia of promosDias; track dia.key) {
+          <div style="flex:1 1 45%;min-width:200px;">
+            <app-text-field
+              [label]="dia.label"
+              [name]="dia.key"
+              [(ngModel)]="promosDiasForm()[dia.key]"
+            ></app-text-field>
+          </div>
+        }
+      </div>
+
+      <app-text-field
+        label="Promo > 300 Lugares"
+        name="fldPromo300Lugares"
+        placeholder="e.j. Descuento grupal"
+        [(ngModel)]="promosDiasForm().fldPromo300Lugares"
+      ></app-text-field>
+    </form>
+
+    <ng-container modal-footer>
+      <button type="button" class="btn-secondary" (click)="cerrarModalPromosDias()" [disabled]="isSavingPromosDias()">Cancelar</button>
+      <button type="submit" form="promosDiasForm" class="btn-primary" [disabled]="isSavingPromosDias()">
+        {{ isSavingPromosDias() ? 'Guardando...' : 'Actualizar' }}
+      </button>
+    </ng-container>
+  </app-modal>
+</section>

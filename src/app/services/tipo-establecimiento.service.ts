@@ -2,7 +2,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { ApiResponseTipoEstablecimiento, ListTipoEstablecimientoDTO, CreateTipoEstablecimientoDTO, EditTipoEstablecimientoDTO } from '../models/tipo_establecimiento.model';
 
 @Injectable({
@@ -47,13 +47,33 @@ export class TiposEstablecimientoService {
 
   eliminarTipo(id: number): Observable<ApiResponseTipoEstablecimiento<any>> {
     const url = `${this.eliminarUrl}?id=${id}`;
-    return this.http.delete<ApiResponseTipoEstablecimiento<any>>(url).pipe(
+    return this.http.delete(url, { responseType: 'text' }).pipe(
+      map((texto) => this.parseRespuestaDelete(texto)),
       catchError(this.handleError)
     );
   }
 
+  private parseRespuestaDelete(texto: string): ApiResponseTipoEstablecimiento<any> {
+    if (!texto) return { codigoEstatus: 1, mensaje: 'Eliminado correctamente.', cuerpoDeRespuesta: null };
+    try {
+      return JSON.parse(texto);
+    } catch {
+      return { codigoEstatus: 1, mensaje: 'Eliminado correctamente.', cuerpoDeRespuesta: null };
+    }
+  }
+
   private handleError(error: HttpErrorResponse) {
     console.error('❌ [Service] Ocurrió un error en la API:', error);
-    return throwError(() => new Error(error.error?.mensaje || 'Error desconocido del servidor'));
+    let mensaje = 'Error desconocido del servidor';
+    if (typeof error.error === 'string') {
+      try {
+        mensaje = JSON.parse(error.error)?.mensaje || mensaje;
+      } catch {
+        // no era JSON, se queda el mensaje genérico
+      }
+    } else if (error.error?.mensaje) {
+      mensaje = error.error.mensaje;
+    }
+    return throwError(() => new Error(mensaje));
   }
 }

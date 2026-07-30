@@ -1,0 +1,8 @@
+/* Estas reglas son internas del componente <app-data-table>.
+   Las páginas que lo consumen no necesitan CSS propio: todo lo demás
+   (tabla, paginación, estado vacío) ya viene de styles.css global. */
+
+th.sortable-th {
+  cursor: pointer;
+  user-select: none;
+}
