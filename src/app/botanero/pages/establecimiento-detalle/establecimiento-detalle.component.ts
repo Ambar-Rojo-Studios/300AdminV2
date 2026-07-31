@@ -1,13 +1,40 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { BotaneroService } from '../../../services/botanero.service';
-import { BotaneroStatsDTO, BotaneroEstablecimientoDTO } from '../../../models/botanero.model';
+import { BotaneroStatsDTO, BotaneroEstablecimientoDTO, BotaneroPromosDTO } from '../../../models/botanero.model';
 import { listarComentario } from '../../../models/comentario.model';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { EstablecimientoFormComponent } from '../../../shared/components/establecimiento-form/establecimiento-form.component';
 import { ToastService } from '../../../shared/services/toast.service';
+import { TextareaFieldComponent } from '../../../shared/components/form-fields/textarea-field.component';
 import { EstablecimientoFormSubmitEvent, EstablecimientoFormValue } from '../../../shared/models/establecimiento-form.model';
+
+/** Los 7 días + la promo 300 Lugares, en el orden en que se pintan en el modal. */
+export const DIAS_PROMO = [
+  { key: 'fldPromoLunes', label: 'Lunes' },
+  { key: 'fldPromoMartes', label: 'Martes' },
+  { key: 'fldPromoMiercoles', label: 'Miércoles' },
+  { key: 'fldPromoJueves', label: 'Jueves' },
+  { key: 'fldPromoViernes', label: 'Viernes' },
+  { key: 'fldPromoSabado', label: 'Sábado' },
+  { key: 'fldPromoDomingo', label: 'Domingo' },
+] as const satisfies readonly { key: keyof BotaneroPromosDTO; label: string }[];
+
+/** El backend hace nullToEmpty en todo, así que el form nunca manda null. */
+function dtoToPromos(dto: BotaneroEstablecimientoDTO): BotaneroPromosDTO {
+  return {
+    fldPromoLunes: dto.fldPromoLunes ?? '',
+    fldPromoMartes: dto.fldPromoMartes ?? '',
+    fldPromoMiercoles: dto.fldPromoMiercoles ?? '',
+    fldPromoJueves: dto.fldPromoJueves ?? '',
+    fldPromoViernes: dto.fldPromoViernes ?? '',
+    fldPromoSabado: dto.fldPromoSabado ?? '',
+    fldPromoDomingo: dto.fldPromoDomingo ?? '',
+    fldPromo300Lugares: dto.fldPromo300Lugares ?? '',
+  };
+}
 
 /**
  * Convierte lo que devuelve /api/botanero/establecimientos/{id} al shape
@@ -63,7 +90,7 @@ function dtoToFormValue(dto: BotaneroEstablecimientoDTO): EstablecimientoFormVal
 @Component({
   selector: 'app-establecimiento-detalle',
   standalone: true,
-  imports: [RouterLink, LoadingSpinnerComponent, ModalComponent, EstablecimientoFormComponent],
+  imports: [FormsModule, RouterLink, LoadingSpinnerComponent, ModalComponent, EstablecimientoFormComponent, TextareaFieldComponent],
   templateUrl: './establecimiento-detalle.component.html',
   styleUrls: ['./establecimiento-detalle.component.css']
 })
@@ -81,6 +108,11 @@ export class EstablecimientoDetalleComponent implements OnInit {
   showFormModal = signal(false);
   guardando = signal(false);
   formValue = signal<EstablecimientoFormValue | null>(null);
+
+  readonly diasPromo = DIAS_PROMO;
+  showPromosModal = signal(false);
+  guardandoPromos = signal(false);
+  promos: BotaneroPromosDTO | null = null;
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -125,6 +157,36 @@ export class EstablecimientoDetalleComponent implements OnInit {
 
   cerrarModalEditar(): void {
     this.showFormModal.set(false);
+  }
+
+  abrirModalPromos(): void {
+    const lugar = this.lugar();
+    if (!lugar) return;
+    this.promos = dtoToPromos(lugar);
+    this.showPromosModal.set(true);
+  }
+
+  cerrarModalPromos(): void {
+    this.showPromosModal.set(false);
+  }
+
+  guardarPromos(): void {
+    const lugar = this.lugar();
+    if (!lugar || !this.promos) return;
+
+    this.guardandoPromos.set(true);
+    this.botaneroService.editarPromos(lugar.idEstablecimiento, this.promos).subscribe({
+      next: (respuesta) => {
+        this.lugar.set(respuesta.cuerpoDeRespuesta);
+        this.toastService.showSuccess('Promociones actualizadas correctamente.');
+        this.guardandoPromos.set(false);
+        this.showPromosModal.set(false);
+      },
+      error: (err) => {
+        this.toastService.showError(err?.error?.mensaje || 'Error al actualizar las promociones.');
+        this.guardandoPromos.set(false);
+      }
+    });
   }
 
   onEstablecimientoSubmit(event: EstablecimientoFormSubmitEvent): void {

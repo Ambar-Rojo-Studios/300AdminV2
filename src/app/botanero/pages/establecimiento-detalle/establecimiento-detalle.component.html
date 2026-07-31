@@ -12,7 +12,7 @@
 
   <div class="acciones">
     <button type="button" (click)="abrirModalEditar()">Editar información</button>
-    <button type="button" disabled title="Se maneja aparte, con BotaneroPromosDTO">Editar promos</button>
+    <button type="button" (click)="abrirModalPromos()">Editar promos</button>
   </div>
 
   <section>
@@ -26,6 +26,22 @@
     } @else {
       <p class="pendiente">Sin datos de estadísticas.</p>
     }
+  </section>
+
+  <section>
+    <h2>Promociones</h2>
+    <dl class="promos">
+      @for (dia of diasPromo; track dia.key) {
+        <div>
+          <dt>{{ dia.label }}</dt>
+          <dd>{{ l[dia.key] || '—' }}</dd>
+        </div>
+      }
+      <div>
+        <dt>Promo 300 Lugares</dt>
+        <dd>{{ l.fldPromo300Lugares || '—' }}</dd>
+      </div>
+    </dl>
   </section>
 
   <section>
@@ -57,6 +73,36 @@
       <button type="button" class="btn-secondary" (click)="cerrarModalEditar()" [disabled]="guardando()">Cancelar</button>
       <button type="submit" form="establecimientoFormBotanero" class="btn-primary" [disabled]="guardando()">
         {{ guardando() ? 'Guardando...' : 'Actualizar' }}
+      </button>
+    </ng-container>
+  </app-modal>
+
+  <app-modal [open]="showPromosModal()" title="Editar promociones" size="lg" (closed)="cerrarModalPromos()">
+    @if (promos) {
+      <form id="promosFormBotanero" (ngSubmit)="guardarPromos()">
+        @for (dia of diasPromo; track dia.key) {
+          <app-textarea-field
+            [label]="dia.label"
+            [rows]="2"
+            placeholder="Sin promoción este día"
+            [(ngModel)]="promos![dia.key]"
+            [name]="dia.key"
+          ></app-textarea-field>
+        }
+        <app-textarea-field
+          label="Promo 300 Lugares"
+          [rows]="2"
+          placeholder="Promoción exclusiva para miembros de 300 Lugares"
+          [(ngModel)]="promos!.fldPromo300Lugares"
+          name="fldPromo300Lugares"
+        ></app-textarea-field>
+      </form>
+    }
+
+    <ng-container modal-footer>
+      <button type="button" class="btn-secondary" (click)="cerrarModalPromos()" [disabled]="guardandoPromos()">Cancelar</button>
+      <button type="submit" form="promosFormBotanero" class="btn-primary" [disabled]="guardandoPromos()">
+        {{ guardandoPromos() ? 'Guardando...' : 'Guardar promos' }}
       </button>
     </ng-container>
   </app-modal>
