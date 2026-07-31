@@ -3,101 +3,251 @@ import { authGuard } from './auth/guards/auth.guard';
 import { guestGuard } from './auth/guards/guest.guard';
 import { createRoleGuard } from './auth/guards/role.guard';
 
+/**
+ * Rutas de 300 Lugares v2.
+ *
+ * Fusion de:
+ *   - Esqueleto (main): layouts + auth + guards + CRUDs admin + portal botanero
+ *   - Agente (mapa):  web publica completa + admin/establecimiento form
+ *
+ * Rutas del mapa unificado (agente):
+ *   - `mapa`                     (público, fullscreen)
+ *   - `mapa-filtro`              (público, filtros + mapa)
+ *   - `buscar`                   (público, buscador + mapa)
+ *   - `detalleEstablecimiento/:id` (público, single-by-id)
+ *   - `admin/establecimiento`    (admin, form selección de coords)
+ *
+ * Convencion: lazy-load con `loadComponent` (AGENTS.md §5.2 #5).
+ * Sin `NgModule`. Rutas admin/botanero con `authGuard` + `createRoleGuard`.
+ */
 export const routes: Routes = [
-  // ── Web pública ──────────────────────────────────────────────
+  // ── Web pública (public-layout) ───────────────────────────────
   {
     path: '',
-    loadComponent: () => import('./layouts/public-layout/public-layout.component').then(m => m.PublicLayoutComponent),
+    loadComponent: () =>
+      import('./layouts/public-layout/public-layout.component').then(
+        (m) => m.PublicLayoutComponent
+      ),
     children: [
       {
         path: '',
-        loadComponent: () => import('./cliente/pages/inicio/inicio.component').then(m => m.InicioComponent)
-      }
-    ]
+        title: '300 Lugares — Descubre establecimientos',
+        loadComponent: () =>
+          import('./cliente/pages/inicio/inicio.component').then(
+            (m) => m.InicioComponent
+          ),
+      },
+      {
+        path: 'mapa',
+        title: 'Mapa — 300 Lugares',
+        loadComponent: () =>
+          import('./cliente/pages/mapa/mapa.component').then(
+            (m) => m.MapaComponent
+          ),
+      },
+      {
+        path: 'mapa-filtro',
+        title: 'Mapa con filtros — 300 Lugares',
+        loadComponent: () =>
+          import('./cliente/pages/mapa-filtro/mapa-filtro.component').then(
+            (m) => m.MapaFiltroComponent
+          ),
+      },
+      {
+        path: 'buscar',
+        title: 'Buscar — 300 Lugares',
+        loadComponent: () =>
+          import('./cliente/pages/buscar/buscar.component').then(
+            (m) => m.BuscarComponent
+          ),
+      },
+      {
+        path: 'detalleEstablecimiento/:id',
+        title: 'Detalle — 300 Lugares',
+        loadComponent: () =>
+          import(
+            './cliente/pages/detalle-establecimiento/detalle-establecimiento.component'
+          ).then((m) => m.DetalleEstablecimientoComponent),
+      },
+    ],
   },
 
   // ── Auth (sin layout) ────────────────────────────────────────
   {
     path: 'login/usuario',
     canActivate: [guestGuard],
-    loadComponent: () => import('./auth/components/login-acceso-usuario/login-acceso-usuario.component').then(m => m.LoginComponent)
+    loadComponent: () =>
+      import(
+        './auth/components/login-acceso-usuario/login-acceso-usuario.component'
+      ).then((m) => m.LoginComponent),
+  },
+  {
+    path: 'login/cliente',
+    canActivate: [guestGuard],
+    loadComponent: () =>
+      import(
+        './auth/components/login-acceso-cliente/login-acceso-cliente.component'
+      ).then((m) => m.LoginAccesoClienteComponent),
+  },
+  {
+    path: 'registro/cliente',
+    loadComponent: () =>
+      import(
+        './auth/components/registro-cliente/registro-cliente.component'
+      ).then((m) => m.RegistroClienteComponent),
   },
   {
     path: 'forgot-password',
-    loadComponent: () => import('./auth/components/password-reset-controller/components/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent)
+    loadComponent: () =>
+      import(
+        './auth/components/password-reset-controller/components/forgot-password/forgot-password.component'
+      ).then((m) => m.ForgotPasswordComponent),
   },
   {
     path: 'validate-code',
-    loadComponent: () => import('./auth/components/password-reset-controller/components/validate-code/validate-code.component').then(m => m.ValidateCode)
+    loadComponent: () =>
+      import(
+        './auth/components/password-reset-controller/components/validate-code/validate-code.component'
+      ).then((m) => m.ValidateCode),
   },
   {
     path: 'unauthorized',
-    loadComponent: () => import('./shared/components/unauthorized/unauthorized.component').then(m => m.UnauthorizedComponent)
+    loadComponent: () =>
+      import('./shared/components/unauthorized/unauthorized.component').then(
+        (m) => m.UnauthorizedComponent
+      ),
   },
 
   // ── Panel admin (ROLE_USUARIO) ───────────────────────────────
   {
     path: 'admin',
     canActivate: [authGuard, createRoleGuard(['usuario'])],
-    loadComponent: () => import('./layouts/admin-layout/admin-layout.component').then(m => m.AdminLayoutComponent),
+    loadComponent: () =>
+      import('./layouts/admin-layout/admin-layout.component').then(
+        (m) => m.AdminLayoutComponent
+      ),
     children: [
       {
         path: 'dashboard',
-        loadComponent: () => import('./admin/pages/dashboard/dashboard.component').then(m => m.DashboardComponent)
+        loadComponent: () =>
+          import('./admin/pages/dashboard/dashboard.component').then(
+            (m) => m.DashboardComponent
+          ),
       },
       {
         path: 'cuentas-botanero',
-        loadComponent: () => import('./admin/pages/cuentas-botanero/cuentas-botanero.component').then(m => m.CuentasBotaneroComponent)
+        loadComponent: () =>
+          import(
+            './admin/pages/cuentas-botanero/cuentas-botanero.component'
+          ).then((m) => m.CuentasBotaneroComponent),
       },
       {
         path: 'empresas',
-        loadComponent: () => import('./admin/pages/empresa/empresa.component').then(m => m.EmpresaComponent)
+        loadComponent: () =>
+          import('./admin/pages/empresa/empresa.component').then(
+            (m) => m.EmpresaComponent
+          ),
       },
       {
         path: 'establecimientos',
-        loadComponent: () => import('./admin/pages/establecimientos/establecimientos.component').then(m => m.EstablecimientosComponent)
+        loadComponent: () =>
+          import(
+            './admin/pages/establecimientos/establecimientos.component'
+          ).then((m) => m.EstablecimientosComponent),
+      },
+      {
+        path: 'establecimiento',
+        title: 'Admin — Establecimiento',
+        loadComponent: () =>
+          import(
+            './admin/pages/establecimiento/establecimiento-form.component'
+          ).then((m) => m.EstablecimientoFormComponent),
       },
       {
         path: 'marca',
-        loadComponent: () => import('./admin/pages/marca/marca.component').then(m => m.MarcaComponent)
+        loadComponent: () =>
+          import('./admin/pages/marca/marca.component').then(
+            (m) => m.MarcaComponent
+          ),
       },
       {
         path: 'tipos-establecimientos',
-        loadComponent: () => import('./admin/pages/tipos-establecimientos/tipos-establecimientos.component').then(m => m.TiposEstablecimientosComponent)
+        loadComponent: () =>
+          import(
+            './admin/pages/tipos-establecimientos/tipos-establecimientos.component'
+          ).then((m) => m.TiposEstablecimientosComponent),
       },
       {
-        // ojo: la ruta vieja era /admin/CategoriaEtiqueta (PascalCase); esta va en minusculas
         path: 'categoria-etiqueta',
-        loadComponent: () => import('./admin/pages/categoria-etiqueta/categoria-etiqueta.component').then(m => m.CategoriaEtiquetaComponent)
+        loadComponent: () =>
+          import(
+            './admin/pages/categoria-etiqueta/categoria-etiqueta.component'
+          ).then((m) => m.CategoriaEtiquetaComponent),
       },
       {
         path: 'etiquetas',
-        loadComponent: () => import('./admin/pages/etiquetas/etiquetas.component').then(m => m.EtiquetasComponent)
+        loadComponent: () =>
+          import('./admin/pages/etiquetas/etiquetas.component').then(
+            (m) => m.EtiquetasComponent
+          ),
       },
       {
         path: 'promociones',
-        loadComponent: () => import('./admin/pages/promocion/promocion.component').then(m => m.PromocionComponent)
+        loadComponent: () =>
+          import('./admin/pages/promocion/promocion.component').then(
+            (m) => m.PromocionComponent
+          ),
       },
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
-    ]
+      {
+        path: 'capsulas',
+        loadComponent: () =>
+          import('./admin/pages/capsula/capsula.component').then(
+            (m) => m.CapsulaComponent
+          ),
+      },
+      {
+        path: 'historial',
+        loadComponent: () =>
+          import('./admin/pages/historial/historial.component').then(
+            (m) => m.HistorialComponent
+          ),
+      },
+      {
+        path: 'comentarios',
+        loadComponent: () =>
+          import('./admin/pages/comentarios/comentarios.component').then(
+            (m) => m.ComentariosComponent
+          ),
+      },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+    ],
   },
 
   // ── Portal de botaneros (ROLE_BOTANERO) ──────────────────────
   {
     path: 'mi-lugar',
     canActivate: [authGuard, createRoleGuard(['botanero'])],
-    loadComponent: () => import('./layouts/botanero-layout/botanero-layout.component').then(m => m.BotaneroLayoutComponent),
+    loadComponent: () =>
+      import('./layouts/botanero-layout/botanero-layout.component').then(
+        (m) => m.BotaneroLayoutComponent
+      ),
     children: [
       {
         path: '',
-        loadComponent: () => import('./botanero/pages/mis-establecimientos/mis-establecimientos.component').then(m => m.MisEstablecimientosComponent)
+        loadComponent: () =>
+          import(
+            './botanero/pages/mis-establecimientos/mis-establecimientos.component'
+          ).then((m) => m.MisEstablecimientosComponent),
       },
       {
         path: 'establecimiento/:id',
-        loadComponent: () => import('./botanero/pages/establecimiento-detalle/establecimiento-detalle.component').then(m => m.EstablecimientoDetalleComponent)
-      }
-    ]
+        loadComponent: () =>
+          import(
+            './botanero/pages/establecimiento-detalle/establecimiento-detalle.component'
+          ).then((m) => m.EstablecimientoDetalleComponent),
+      },
+    ],
   },
 
-  { path: '**', redirectTo: '' }
+  { path: '**', redirectTo: '' },
 ];

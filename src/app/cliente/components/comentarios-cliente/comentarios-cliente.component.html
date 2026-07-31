@@ -1,0 +1,107 @@
+<section class="comentarios" aria-label="Comentarios del establecimiento">
+  <header class="comentarios__header">
+    <h2>Comentarios</h2>
+    <app-cliente-estrella [establecimientoId]="establecimientoId()"></app-cliente-estrella>
+  </header>
+
+  @if (cargando()) {
+    <div class="comentarios__loading">Cargando comentarios…</div>
+  } @else if (comentarios().length === 0) {
+    <div class="comentarios__empty">Aún no hay comentarios. ¡Sé el primero!</div>
+  } @else {
+    <ul class="comentarios__lista">
+      @for (c of comentarios(); track c.idComentario) {
+        <li class="comentario">
+          <div class="comentario__avatar">
+            @if (c.fldImagenPerfil) {
+              <img [src]="c.fldImagenPerfil" [alt]="c.fldNombre" />
+            } @else {
+              <i class="fa-solid fa-user"></i>
+            }
+          </div>
+          <div class="comentario__body">
+            <div class="comentario__meta">
+              <strong>{{ c.fldNombre }}</strong>
+              <span class="comentario__fecha">{{ c.fldFechaComentario }}</span>
+              @if (c.fldEstrellas) {
+                <span class="comentario__estrellas" [attr.aria-label]="c.fldEstrellas + ' estrellas'">
+                  @for (s of [1, 2, 3, 4, 5]; track s) {
+                    <i
+                      class="fa-solid fa-star"
+                      [class.on]="s <= c.fldEstrellas"
+                    ></i>
+                  }
+                </span>
+              }
+            </div>
+
+            @if (comentarioEnEdicion()?.idComentario === c.idComentario; as ed) {
+              <textarea
+                class="comentario__editor"
+                [ngModel]="edicionTexto()"
+                (ngModelChange)="edicionTexto.set($event)"
+                name="edicion"
+                rows="3"
+              ></textarea>
+              <div class="comentario__acciones">
+                <button type="button" class="btn btn--primary" (click)="guardarEdicion()">
+                  Guardar
+                </button>
+                <button type="button" class="btn btn--ghost" (click)="cancelarEdicion()">
+                  Cancelar
+                </button>
+              </div>
+            } @else {
+              <p class="comentario__texto">{{ c.fldComentario }}</p>
+              @if (esAutor(c)) {
+                <div class="comentario__acciones">
+                  <button type="button" class="btn btn--ghost" (click)="iniciarEdicion(c)">
+                    Editar
+                  </button>
+                  <button type="button" class="btn btn--danger" (click)="prepararEliminacion(c)">
+                    Eliminar
+                  </button>
+                </div>
+              }
+            }
+          </div>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (idClienteAutenticado()) {
+    <form #f="ngForm" class="comentario-form" (submit)="$event.preventDefault(); crearComentario(f)">
+      <textarea
+        class="comentario-form__texto"
+        name="texto"
+        [(ngModel)]="nuevoTexto"
+        (ngModelChange)="onNuevoTexto($event)"
+        placeholder="Escribe un comentario…"
+        rows="3"
+      ></textarea>
+      <div class="comentario-form__acciones">
+        <button type="submit" class="btn btn--primary">Comentar</button>
+      </div>
+    </form>
+  } @else {
+    <p class="comentarios__login-hint">
+      <a routerLink="/login/cliente">Inicia sesión</a> para dejar un comentario.
+    </p>
+  }
+</section>
+
+@if (showModal()) {
+  <div class="modal-overlay" (click)="cerrarModal()">
+    <div class="modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <h3>Eliminar comentario</h3>
+      <p>¿Seguro que deseas eliminar este comentario?</p>
+      <div class="modal__acciones">
+        <button type="button" class="btn btn--ghost" (click)="cerrarModal()">Cancelar</button>
+        <button type="button" class="btn btn--danger" (click)="confirmarEliminacion()">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+}

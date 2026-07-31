@@ -1,0 +1,13 @@
+<div class="mapa-filtro-wrapper">
+  <app-filter-map
+    (coordenadasFiltradas)="onCoordenadasFiltradas($event)"
+  ></app-filter-map>
+
+  <div class="mapa-filtro-canvas">
+    <app-mapa-establecimiento
+      [establecimientos]="filtrados()"
+      [height]="'100%'"
+      (markerClick)="irAlDetalle($event)"
+    ></app-mapa-establecimiento>
+  </div>
+</div>

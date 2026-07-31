@@ -1,0 +1,15 @@
+<section class="admin-page">
+  <div class="header-actions">
+    <h2>Historial de códigos canjeados</h2>
+  </div>
+
+  <app-data-table
+    [columns]="columns"
+    [data]="historial()"
+    [loading]="isLoading()"
+    emptyMessage="No hay canjes registrados."
+    [currentPage]="currentPage()"
+    [totalPages]="totalPages()"
+    (pageChange)="onPageChange($event)"
+  ></app-data-table>
+</section>

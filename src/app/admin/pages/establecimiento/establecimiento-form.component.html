@@ -1,0 +1,20 @@
+<section class="establecimiento-form-page">
+  <h2>Establecimiento</h2>
+
+  <!-- Sección de coordenadas (mapa en modo selección) -->
+  <app-mapa-establecimiento
+    [modo]="'seleccionar'"
+    [coords]="coordsIniciales"
+    [showLinkInput]="true"
+    [height]="'400px'"
+    (coordsChange)="onCoordsChange($event)"
+  ></app-mapa-establecimiento>
+
+  @if (coords(); as c) {
+    <div class="coords-preview">
+      <strong>Coordenadas capturadas:</strong>
+      <span>Lat: {{ c.lat }}</span>
+      <span>Lng: {{ c.lng }}</span>
+    </div>
+  }
+</section>

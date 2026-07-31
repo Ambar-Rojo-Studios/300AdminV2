@@ -1,0 +1,58 @@
+@if (establecimientos().length > 0) {
+  <div class="carrusel" role="region" aria-label="Carrusel de establecimientos destacados">
+    <div class="carrusel__viewport">
+      <div
+        class="carrusel__track"
+        [style.transform]="'translateX(-' + currentIndex() * 100 + '%)'"
+      >
+        @for (est of establecimientos(); track est.idEstablecimiento; let i = $index) {
+          <div class="carrusel__slide" [attr.aria-hidden]="i !== currentIndex()">
+            @if (est.fldImgRefs) {
+              <img
+                [src]="est.fldImgRefs"
+                [alt]="'Imagen de ' + est.fldNombre"
+                loading="lazy"
+              />
+            }
+            <div class="carrusel__slide-caption">
+              <h3>{{ est.fldNombre }}</h3>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    @if (establecimientos().length > 1) {
+      <button
+        type="button"
+        class="carrusel__btn carrusel__btn--prev"
+        aria-label="Anterior"
+        (click)="prevSlide()"
+      >
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+      <button
+        type="button"
+        class="carrusel__btn carrusel__btn--next"
+        aria-label="Siguiente"
+        (click)="nextSlide()"
+      >
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+
+      <div class="carrusel__indicators" role="tablist">
+        @for (est of establecimientos(); track est.idEstablecimiento; let i = $index) {
+          <button
+            type="button"
+            role="tab"
+            [attr.aria-selected]="i === currentIndex()"
+            [attr.aria-label]="'Ir al slide ' + (i + 1)"
+            class="carrusel__indicator"
+            [class.carrusel__indicator--active]="i === currentIndex()"
+            (click)="showSlide(i)"
+          ></button>
+        }
+      </div>
+    }
+  </div>
+}

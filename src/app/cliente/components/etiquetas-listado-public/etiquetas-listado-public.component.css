@@ -1,0 +1,29 @@
+.etiquetas-listado__loading,
+.etiquetas-listado__error {
+  font-size: 0.85rem;
+  color: var(--text-muted, #777);
+  padding: 0.5rem 0;
+}
+
+.etiquetas-listado__error {
+  color: var(--danger, #dc2626);
+}
+
+.etiquetas-listado__lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.etiquetas-listado__chip {
+  background: var(--accent-soft, rgba(242, 50, 25, 0.1));
+  color: var(--accent, #f23219);
+  border: 1px solid var(--accent, #f23219);
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+}

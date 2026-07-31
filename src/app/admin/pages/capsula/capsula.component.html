@@ -1,0 +1,89 @@
+<section class="admin-page">
+  <div class="header-actions">
+    <h2>Cápsulas culturales</h2>
+    <button type="button" class="create-btn" aria-label="Crear cápsula" title="Crear cápsula" (click)="abrirModalCrear()">
+      <i class="fa fa-plus" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <app-data-table
+    [columns]="columns"
+    [data]="capsulesOrdenadas()"
+    [loading]="isLoading()"
+    emptyMessage="No hay cápsulas culturales para mostrar."
+    [currentPage]="currentPage()"
+    [totalPages]="totalPages()"
+    [sortKey]="sortKey()"
+    [sortDirection]="sortDirection()"
+    (pageChange)="onPageChange($event)"
+    (sortChange)="onSortChange($event)"
+  >
+    <ng-template let-row>
+      <button type="button" class="edit-btn" [attr.aria-label]="'Editar ' + row.fldTitulo" (click)="abrirModalEditar(row)">
+        <i class="fas fa-edit" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="delete-btn" [attr.aria-label]="'Eliminar ' + row.fldTitulo" (click)="abrirModalEliminar(row)">
+        <i class="fas fa-trash" aria-hidden="true"></i>
+      </button>
+    </ng-template>
+  </app-data-table>
+
+  <app-modal [open]="showFormModal()" [title]="modalTitle()" size="lg" (closed)="cerrarModalFormulario()">
+    <form #capsulaForm="ngForm" (ngSubmit)="onSubmit(capsulaForm)" id="capsulaForm">
+      <app-text-field
+        label="Título"
+        name="fldTitulo"
+        [(ngModel)]="capsula().fldTitulo"
+        [required]="true"
+      ></app-text-field>
+
+      <app-textarea-field
+        label="Descripción"
+        name="fldDescripcion"
+        [rows]="4"
+        [(ngModel)]="capsula().fldDescripcion"
+        [required]="true"
+      ></app-textarea-field>
+
+      <app-text-field
+        label="Fecha de publicación"
+        type="date"
+        name="fldFechaPublicacion"
+        [(ngModel)]="capsula().fldFechaPublicacion"
+        [required]="true"
+      ></app-text-field>
+
+      <app-select-field
+        label="Visible"
+        [options]="visibilityOptions"
+        [(ngModel)]="esVisible"
+        name="fldEsVisible"
+      ></app-select-field>
+
+      <app-file-field
+        label="Imagen"
+        accept="image/*"
+        hint="Formatos: JPG, PNG. Tamaño máximo: 5 MB."
+        [previewUrl]="previewUrl()"
+        (fileChange)="onPhotoSelected($event)"
+      ></app-file-field>
+    </form>
+
+    <ng-container modal-footer>
+      <button type="button" class="btn-secondary" (click)="cerrarModalFormulario()" [disabled]="isSaving()">Cancelar</button>
+      <button type="submit" form="capsulaForm" class="btn-primary" [disabled]="capsulaForm.invalid || isSaving()">
+        {{ isSaving() ? 'Guardando...' : (modalMode() === 'edit' ? 'Actualizar' : 'Guardar') }}
+      </button>
+    </ng-container>
+  </app-modal>
+
+  <app-confirm-dialog
+    [open]="showDeleteModal()"
+    title="Confirmar Eliminación"
+    message="¿Seguro que deseas eliminar la cápsula"
+    [itemName]="capsulaAEliminar()?.fldTitulo ?? null"
+    [loading]="isDeleting()"
+    (confirm)="confirmarEliminar()"
+    (cancel)="cerrarModalEliminar()"
+  ></app-confirm-dialog>
+</section>

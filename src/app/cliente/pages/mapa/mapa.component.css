@@ -1,0 +1,20 @@
+.mapa-fullscreen-wrapper {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+}
+
+.mapa-fullscreen-loading,
+.mapa-fullscreen-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  color: #666;
+}
+
+.mapa-fullscreen-error {
+  color: #dc2626;
+}
