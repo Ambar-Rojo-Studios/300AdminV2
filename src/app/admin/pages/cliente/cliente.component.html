@@ -1,0 +1,124 @@
+<section class="admin-page">
+  <div class="header-actions">
+    <h2>Clientes</h2>
+    <button type="button" class="create-btn" aria-label="Crear cliente" title="Crear cliente" (click)="abrirModalCrear()">
+      <i class="fa fa-plus" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <app-data-table
+    [columns]="columns"
+    [data]="clientesOrdenados()"
+    [loading]="isLoading()"
+    emptyMessage="No hay clientes para mostrar."
+    [sortKey]="sortKey()"
+    [sortDirection]="sortDirection()"
+    (sortChange)="onSortChange($event)"
+  >
+    <ng-template let-row>
+      <button type="button" class="edit-btn" [attr.aria-label]="'Editar ' + row.fldNombre" (click)="abrirModalEditar(row)">
+        <i class="fas fa-edit" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="delete-btn" [attr.aria-label]="'Eliminar ' + row.fldNombre" (click)="abrirModalEliminar(row)">
+        <i class="fas fa-trash" aria-hidden="true"></i>
+      </button>
+    </ng-template>
+  </app-data-table>
+
+  <app-modal [open]="showFormModal()" [title]="modalTitle()" (closed)="cerrarModalFormulario()">
+    <form #clienteForm="ngForm" (ngSubmit)="onSubmit(clienteForm)" id="clienteForm">
+      <app-text-field
+        label="Nombre"
+        name="fldNombre"
+        #fldNombre="ngModel"
+        [(ngModel)]="cliente().fldNombre"
+        [required]="true"
+        [invalid]="!!(fldNombre.invalid && fldNombre.touched)"
+        errorMessage="El nombre es obligatorio."
+      ></app-text-field>
+
+      <app-text-field
+        label="Nombre corto"
+        name="fldNombreCorto"
+        #fldNombreCorto="ngModel"
+        [(ngModel)]="cliente().fldNombreCorto"
+        [required]="true"
+        [invalid]="!!(fldNombreCorto.invalid && fldNombreCorto.touched)"
+        errorMessage="El nombre corto es obligatorio."
+      ></app-text-field>
+
+      <app-text-field
+        label="Teléfono"
+        name="fldTelefono"
+        #fldTelefono="ngModel"
+        [(ngModel)]="cliente().fldTelefono"
+        [required]="true"
+        [invalid]="!!(fldTelefono.invalid && fldTelefono.touched)"
+        errorMessage="El teléfono es obligatorio."
+      ></app-text-field>
+
+      <app-text-field
+        label="Correo electrónico"
+        type="email"
+        name="fldCorreoElectronico"
+        #fldCorreoElectronico="ngModel"
+        [(ngModel)]="cliente().fldCorreoElectronico"
+        [required]="true"
+        [invalid]="!!(fldCorreoElectronico.invalid && fldCorreoElectronico.touched)"
+        errorMessage="Correo inválido."
+      ></app-text-field>
+
+      @if (modalMode() === 'create') {
+        <app-text-field
+          label="Contraseña"
+          type="password"
+          name="fldContrasenia"
+          #fldContrasenia="ngModel"
+          [(ngModel)]="cliente().fldContrasenia"
+          [required]="true"
+          [invalid]="!!(fldContrasenia.invalid && fldContrasenia.touched)"
+          errorMessage="La contraseña es obligatoria."
+        ></app-text-field>
+      }
+
+      <app-text-field
+        label="Fecha de nacimiento"
+        type="date"
+        name="fldFechaNacimiento"
+        [(ngModel)]="cliente().fldFechaNacimiento"
+      ></app-text-field>
+
+      <app-select-field
+        label="Suscripción"
+        name="idSuscripcion"
+        [options]="suscripcionOptions()"
+        [(ngModel)]="cliente().idSuscripcion"
+        [required]="true"
+      ></app-select-field>
+
+      <app-file-field
+        label="Foto de perfil"
+        accept="image/*"
+        [previewUrl]="cliente().fldImagenPerfil ?? null"
+        (fileChange)="onFotoSeleccionada($event)"
+      ></app-file-field>
+    </form>
+
+    <ng-container modal-footer>
+      <button type="button" class="btn-secondary" (click)="cerrarModalFormulario()" [disabled]="isSaving()">Cancelar</button>
+      <button type="submit" form="clienteForm" class="btn-primary" [disabled]="clienteForm.invalid || isSaving()">
+        {{ isSaving() ? 'Guardando...' : (modalMode() === 'edit' ? 'Actualizar' : 'Guardar') }}
+      </button>
+    </ng-container>
+  </app-modal>
+
+  <app-confirm-dialog
+    [open]="showDeleteModal()"
+    title="Confirmar eliminación"
+    message="¿Seguro que deseas eliminar al cliente"
+    [itemName]="clienteAEliminar()?.fldNombre ?? null"
+    [loading]="isDeleting()"
+    (confirm)="confirmarEliminar()"
+    (cancel)="cerrarModalEliminar()"
+  ></app-confirm-dialog>
+</section>

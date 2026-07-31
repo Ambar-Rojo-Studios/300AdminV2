@@ -20,6 +20,9 @@ import { AuthService } from '../../auth/services/auth.service';
           <a routerLink="/admin/categoria-etiqueta">Categorías de etiqueta</a>
           <a routerLink="/admin/etiquetas">Etiquetas</a>
           <a routerLink="/admin/promociones">Promociones</a>
+          <a routerLink="/admin/usuarios">Usuarios</a>
+          <a routerLink="/admin/clientes">Clientes</a>
+          <a routerLink="/admin/suscripciones">Suscripciones</a>
           <!-- ponytail: los links de CRUDs se agregan conforme se migren las páginas -->
         </nav>
         <button type="button" (click)="cerrarSesion()">Cerrar sesión</button>

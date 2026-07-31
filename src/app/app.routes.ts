@@ -199,6 +199,27 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'usuarios',
+        loadComponent: () =>
+          import('./admin/pages/usuario/usuario.component').then(
+            (m) => m.UsuarioComponent
+          ),
+      },
+      {
+        path: 'clientes',
+        loadComponent: () =>
+          import('./admin/pages/cliente/cliente.component').then(
+            (m) => m.ClienteComponent
+          ),
+      },
+      {
+        path: 'suscripciones',
+        loadComponent: () =>
+          import('./admin/pages/suscripcion/suscripcion.component').then(
+            (m) => m.SuscripcionComponent
+          ),
+      },
+      {
         path: 'capsulas',
         loadComponent: () =>
           import('./admin/pages/capsula/capsula.component').then(
