@@ -95,6 +95,7 @@
       <app-mapa-establecimiento
         [coords]="coordsActuales()"
         [modo]="esCreacion() ? 'crear' : 'editar'"
+        [showLinkInput]="true"
         (coordsChange)="onCoordsChange($event)"
       ></app-mapa-establecimiento>
     </div>
