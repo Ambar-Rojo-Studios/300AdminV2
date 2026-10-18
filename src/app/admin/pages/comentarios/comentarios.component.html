@@ -6,7 +6,7 @@
   <div style="max-width:420px;margin-bottom:1rem;">
     <app-select-field
       label="Establecimiento"
-      [options]="establecimientos"
+      [options]="establecimientos()"
       placeholder="Selecciona un establecimiento"
       name="establecimientoId"
       [ngModel]="establecimientoId()"

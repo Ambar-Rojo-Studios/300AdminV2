@@ -30,7 +30,7 @@ import { TableColumn } from '../../../shared/models/table.model';
   templateUrl: './comentarios.component.html',
 })
 export class ComentariosComponent implements OnInit {
-  establecimientos: SelectOption[] = [];
+  establecimientos = signal<SelectOption[]>([]);
   establecimientoId = signal<number | null>(null);
 
   comentarios = signal<listarComentario[]>([]);
@@ -71,10 +71,12 @@ export class ComentariosComponent implements OnInit {
       .subscribe({
         next: (res: ApiResponseEstablecimiento<EstablecimientoListDTO[]>) => {
           const list = res?.cuerpoDeRespuesta ?? [];
-          this.establecimientos = list.map((e) => ({
-            value: e.idEstablecimiento,
-            label: e.fldNombre ?? `ID ${e.idEstablecimiento}`,
-          }));
+          this.establecimientos.set(
+            list.map((e) => ({
+              value: e.idEstablecimiento,
+              label: e.fldNombre ?? `ID ${e.idEstablecimiento}`,
+            }))
+          );
         },
         error: (err: HttpErrorResponse) => {
           this.toastService.showError(
