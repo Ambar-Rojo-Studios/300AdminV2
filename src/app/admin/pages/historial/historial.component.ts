@@ -12,6 +12,14 @@ import { ToastService } from '../../../shared/services/toast.service';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
 import { TableColumn } from '../../../shared/models/table.model';
 
+const FORMATO_FECHA_HORA = new Intl.DateTimeFormat('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
+
+/** El backend manda la fecha sin zona horaria (LocalDateTime); se muestra tal cual llega. */
+function formatearFechaHora(valor: string): string {
+  const fecha = new Date(valor);
+  return Number.isNaN(fecha.getTime()) ? valor : FORMATO_FECHA_HORA.format(fecha);
+}
+
 @Component({
   selector: 'app-historial',
   standalone: true,
@@ -27,12 +35,13 @@ export class HistorialComponent implements OnInit {
 
   columns: TableColumn<ListHistorialCodigo>[] = [
     { key: 'idCanje', label: 'Canje', width: '70px' },
-    { key: 'idPromocion', label: 'Promoción', width: '90px' },
-    { key: 'fldSuscripcion', label: 'Suscripción' },
+    { key: 'fldfecha', label: 'Fecha y hora', format: (row) => formatearFechaHora(row.fldfecha) },
+    { key: 'nombreCliente', label: 'Cliente', format: (row) => row.nombreCliente || `Cliente #${row.idCliente}` },
     { key: 'fldEstablecimiento', label: 'Establecimiento' },
     { key: 'fldNombre', label: 'Promoción' },
     { key: 'fldDescripcion', label: 'Descripción' },
-    { key: 'fldfecha', label: 'Fecha' },
+    { key: 'fldSuscripcion', label: 'Suscripción' },
+    { key: 'idPromocion', label: 'ID promo', width: '90px' },
   ];
 
   constructor(

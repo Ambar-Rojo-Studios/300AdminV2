@@ -6,7 +6,8 @@ export interface ListHistorialCodigo {
     fldEstablecimiento: string;
     fldNombre: string;
     fldDescripcion: string;
-    idusuario:number; //De la tabla Usuarios
+    idCliente: number;
+    nombreCliente: string;
     fldfecha: string;
 }
 
