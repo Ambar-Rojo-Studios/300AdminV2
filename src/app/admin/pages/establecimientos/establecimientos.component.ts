@@ -27,6 +27,7 @@ import {
   EstablecimientoFormSubmitEvent,
   EstablecimientoFormValue,
 } from '../../../shared/models/establecimiento-form.model';
+import { imagenesAConservar } from '../../../utils/imagenes-conservadas';
 
 /**
  * Página de establecimientos del admin (E3).
@@ -407,17 +408,7 @@ export class EstablecimientosComponent implements OnInit {
           fldImgRefs4: '',
           fldMenu: '',
 
-          // SINCRONIZACIÓN: hay que mandar las URLs existentes que se quieren CONSERVAR.
-          // Slot N (foto/foto2/foto3/foto4) <-> índice N-1 de imagenesPerfil (mismo orden
-          // en que se listaron al abrir el modal de editar). Si el usuario subió un archivo
-          // nuevo en ese slot, se quita esa URL de "conservadas" (el backend la reemplaza con
-          // el archivo nuevo que va en la parte multipart "perfil"); si no, se mantiene.
-          imagenesPerfil: (original.imagenesPerfil ?? []).filter((_, i) => {
-            const nuevoEnEseSlot = [files.foto, files.foto2, files.foto3, files.foto4][i];
-            return !nuevoEnEseSlot;
-          }),
-          // El form solo tiene 1 slot de menú: si se sube uno nuevo, se reemplazan todos los existentes.
-          imagenesMenu: files.menu ? [] : (original.imagenesMenu ?? []),
+          ...imagenesAConservar(original.imagenesPerfil, original.imagenesMenu, files),
 
           fldHorarioApertura: this.formatTimeForAPI(values.fldHorarioApertura),
           fldHorarioCierre: this.formatTimeForAPI(values.fldHorarioCierre),

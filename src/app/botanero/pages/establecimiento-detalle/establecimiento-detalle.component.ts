@@ -10,6 +10,7 @@ import { EstablecimientoFormComponent } from '../../../shared/components/estable
 import { ToastService } from '../../../shared/services/toast.service';
 import { TextareaFieldComponent } from '../../../shared/components/form-fields/textarea-field.component';
 import { EstablecimientoFormSubmitEvent, EstablecimientoFormValue } from '../../../shared/models/establecimiento-form.model';
+import { imagenesAConservar } from '../../../utils/imagenes-conservadas';
 
 /** Los 7 días + la promo 300 Lugares, en el orden en que se pintan en el modal. */
 export const DIAS_PROMO = [
@@ -80,9 +81,9 @@ function dtoToFormValue(dto: BotaneroEstablecimientoDTO): EstablecimientoFormVal
     fldAntiguedadAnios: dto.fldAntiguedadAnios,
 
     fldImgRefs: dto.imagenesPerfil?.[0] ?? null,
-    fldImgRefs2: null,
-    fldImgRefs3: null,
-    fldImgRefs4: null,
+    fldImgRefs2: dto.imagenesPerfil?.[1] ?? null,
+    fldImgRefs3: dto.imagenesPerfil?.[2] ?? null,
+    fldImgRefs4: dto.imagenesPerfil?.[3] ?? null,
     fldMenu: dto.imagenesMenu?.[0] ?? null,
   };
 }
@@ -236,12 +237,15 @@ export class EstablecimientoDetalleComponent implements OnInit {
       fldPromoViernes: lugar.fldPromoViernes,
       fldPromoSabado: lugar.fldPromoSabado,
       fldPromoDomingo: lugar.fldPromoDomingo,
+      ...imagenesAConservar(lugar.imagenesPerfil, lugar.imagenesMenu, files),
     };
 
     const formData = new FormData();
     formData.append('datos', new Blob([JSON.stringify(datos)], { type: 'application/json' }));
-    if (files.foto) formData.append('perfil', files.foto);
-    if (files.menu) formData.append('menu', files.menu);
+    [files.foto, files.foto2, files.foto3, files.foto4].forEach((f) => {
+      if (f) formData.append('perfil', f, f.name);
+    });
+    if (files.menu) formData.append('menu', files.menu, files.menu.name);
 
     this.guardando.set(true);
     this.botaneroService.editarEstablecimiento(lugar.idEstablecimiento, formData).subscribe({
