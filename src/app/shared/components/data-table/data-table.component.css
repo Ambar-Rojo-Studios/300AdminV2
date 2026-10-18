@@ -2,6 +2,8 @@
    Las páginas que lo consumen no necesitan CSS propio: todo lo demás
    (tabla, paginación, estado vacío) ya viene de styles.css global. */
 
+:host { display: block; min-width: 0; max-width: 100%; }
+
 th.sortable-th {
   cursor: pointer;
   user-select: none;
