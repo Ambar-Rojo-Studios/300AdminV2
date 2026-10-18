@@ -17,6 +17,8 @@ import { SelectFieldComponent, SelectOption } from '../../../shared/components/f
 import { FileFieldComponent } from '../../../shared/components/form-fields/file-field.component';
 import { SortDirection, SortEvent, TableColumn } from '../../../shared/models/table.model';
 
+const PAGE_SIZE = 50;
+
 /**
  * Página admin de Clientes (Etapa 3, CRUD bloque B). Mismo patrón que
  * marca: tabla + modal genéricos. Los clientes son usuarios de la app móvil.
@@ -84,6 +86,14 @@ export class ClienteComponent implements OnInit {
     return copia;
   });
 
+  currentPage = signal(1);
+  totalPages = computed(() => Math.max(1, Math.ceil(this.clientesOrdenados().length / PAGE_SIZE)));
+  paginaActual = computed(() => Math.min(this.currentPage(), this.totalPages()));
+  clientesPagina = computed<ClienteListDTO[]>(() => {
+    const inicio = (this.paginaActual() - 1) * PAGE_SIZE;
+    return this.clientesOrdenados().slice(inicio, inicio + PAGE_SIZE);
+  });
+
   constructor(
     private clientesService: ClientesService,
     private suscripcionesService: SuscripcionesService,
@@ -116,6 +126,11 @@ export class ClienteComponent implements OnInit {
   onSortChange(evento: SortEvent): void {
     this.sortKey.set(evento.direction ? evento.key : null);
     this.sortDirection.set(evento.direction);
+    this.currentPage.set(1);
+  }
+
+  onPageChange(page: number): void {
+    this.currentPage.set(page);
   }
 
   onFotoSeleccionada(archivo: File | File[] | null): void {
