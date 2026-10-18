@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse, HttpParams} from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, catchError, throwError, firstValueFrom, map } from 'rxjs';
+import { Observable, catchError, throwError, map } from 'rxjs';
 import { listarPromocionesDTO, CrearPromocionDTO, EditarPromocionDTO, ApiResponsivePromocion} from '../models/promocion.model';
 
 @Injectable({
@@ -57,33 +57,6 @@ export class PromocionesService {
   })
   .pipe(catchError(this.handleError));
 }
-
-  /**
-   * CONTABILIDAD DINÁMICA: Obtiene el total de promociones para el dashboard
-   * Solicita un pageSize grande (10000) para obtener prácticamente todas las promociones
-   * y contar el total real desde el backend
-   * @returns Promise<number> Total de promociones
-   */
-  async obtenerTotalPromociones(): Promise<number> {
-    try {
-      const params = new HttpParams()
-        .set('fldPageNumber', '1')
-        .set('fldPageSize', '10000');
-      
-      const res = await firstValueFrom(
-        this.http.get<ApiResponsivePromocion<listarPromocionesDTO[]>>(this.listarUrl, { params: params })
-          .pipe(catchError(this.handleError))
-      );
-      
-      if (res?.codigoEstatus === 1 && res.cuerpoDeRespuesta) {
-        return res.cuerpoDeRespuesta.length;
-      }
-      return 0;
-    } catch (error) {
-      console.error('Error al obtener total de promociones:', error);
-      return 0;
-    }
-  }
 
   private handleError(error: HttpErrorResponse): Observable<never> {
     console.error('❌ Error en la solicitud:', error);

@@ -1,25 +1,87 @@
-<section class="admin-page">
-  <div class="header-actions">
-    <h2>Dashboard</h2>
-  </div>
+<section class="admin-page" aria-labelledby="dashboard-titulo">
+  <header class="header-actions">
+    <div>
+      <h1 id="dashboard-titulo">Dashboard</h1>
+      <p class="dashboard-fecha"><time [attr.datetime]="hoy().toISOString()">{{ fechaHoy() }}</time></p>
+    </div>
+    <button type="button" class="btn-secondary" (click)="cargarTodo()" [disabled]="cargando()">
+      <i class="fas fa-rotate-right" aria-hidden="true"></i>
+      {{ cargando() ? 'Actualizando…' : 'Actualizar' }}
+    </button>
+  </header>
 
-  <div class="dashboard-grid">
-    @for (kpi of kpis(); track kpi.key) {
-      <div class="card kpi-card">
-        <div class="kpi-icon">
-          <i class="fas {{ kpi.icon }}" aria-hidden="true"></i>
-        </div>
-        <div class="kpi-body">
-          @if (kpi.loading) {
-            <span class="loading-spinner" role="status" aria-label="Cargando"></span>
-          } @else if (kpi.error) {
-            <span class="kpi-error"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Error</span>
+  <div class="dashboard-grid" aria-label="Resumen de catálogos">
+    @for (kpi of kpis(); track kpi.link) {
+      <a class="card kpi-card" [routerLink]="kpi.link"
+        [attr.aria-label]="kpi.label + ': ' + (kpi.fuente.loading ? 'Cargando' : kpi.fuente.error ? 'Sin datos' : kpi.value) + '. Abrir catálogo'">
+        <span class="kpi-icon"><i class="fas {{ kpi.icon }}" aria-hidden="true"></i></span>
+        <span class="kpi-body">
+          @if (kpi.fuente.loading) {
+            <span class="kpi-loading" role="status"><span class="loading-spinner" aria-hidden="true"></span><span class="sr-only">Cargando {{ kpi.label }}</span></span>
+          } @else if (kpi.fuente.error) {
+            <span class="kpi-error"><i class="fas fa-circle-exclamation" aria-hidden="true"></i> Sin datos</span>
           } @else {
             <span class="kpi-value">{{ kpi.value }}</span>
           }
           <span class="kpi-label">{{ kpi.label }}</span>
-        </div>
-      </div>
+        </span>
+        <i class="fas fa-chevron-right kpi-arrow" aria-hidden="true"></i>
+      </a>
+    }
+  </div>
+
+  <a class="card revision-promociones" routerLink="/admin/promociones"
+    [attr.aria-label]="'Promociones por vencer entre hoy y los próximos 7 días: ' + (promociones().loading ? 'Cargando' : promociones().error ? 'Sin datos' : promocionesPorVencer()) + '. Revisar promociones'">
+    <span class="kpi-icon"><i class="fas fa-calendar-check" aria-hidden="true"></i></span>
+    <div>
+      <h2>Promociones por vencer</h2>
+      <p>Activas que terminan entre hoy y los próximos 7 días.</p>
+    </div>
+    @if (promociones().loading) {
+      <span role="status"><span class="loading-spinner" aria-hidden="true"></span><span class="sr-only">Cargando promociones por vencer</span></span>
+    } @else if (promociones().error) {
+      <span class="kpi-error">Sin datos</span>
+    } @else {
+      <span class="kpi-value">{{ promocionesPorVencer() }}</span>
+    }
+  </a>
+
+  <div class="desglose-grid">
+    @for (panel of [
+      { id: 'ciudad', titulo: 'Establecimientos por ciudad', barras: porCiudad(), loading: desgloseCargando(), error: desgloseError() },
+      { id: 'tipo', titulo: 'Establecimientos por tipo', barras: porTipo(), loading: tiposCargando(), error: tiposError() }
+    ]; track panel.id) {
+      <section class="card desglose-panel" [attr.aria-labelledby]="'desglose-' + panel.id">
+        <header class="desglose-header">
+          <h2 [id]="'desglose-' + panel.id">{{ panel.titulo }}</h2>
+          <p>Hasta 6 grupos con más establecimientos.</p>
+        </header>
+        @if (panel.loading) {
+          <div class="desglose-estado" role="status">
+            <span class="loading-spinner" aria-hidden="true"></span>
+            <p>Cargando desglose…</p>
+          </div>
+        } @else if (panel.error) {
+          <div class="desglose-estado estado-error">
+            <i class="fas fa-circle-exclamation" aria-hidden="true"></i>
+            <p>No se pudo cargar este desglose. Pulsa Actualizar para reintentar.</p>
+          </div>
+        } @else if (panel.barras.length === 0) {
+          <div class="desglose-estado">
+            <i class="fas fa-store" aria-hidden="true"></i>
+            <p>Todavía no hay establecimientos para mostrar.</p>
+          </div>
+        } @else {
+          <ul class="barras-lista">
+            @for (barra of panel.barras; track barra.label) {
+              <li>
+                <div class="barra-etiqueta"><span>{{ barra.label }}</span><strong>{{ barra.total }}</strong></div>
+                <div class="barra-pista" aria-hidden="true"><div class="barra-relleno" [style.width]="porcentajeAncho(barra)"></div></div>
+              </li>
+            }
+          </ul>
+        }
+      </section>
     }
   </div>
 </section>

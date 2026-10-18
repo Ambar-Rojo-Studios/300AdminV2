@@ -1,7 +1,7 @@
 // src/app/services/establecimientos.services.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
-import { Observable, catchError, throwError, firstValueFrom, map } from 'rxjs';
+import { Observable, catchError, throwError, map } from 'rxjs';
 import {ApiResponseEstablecimiento,EstablecimientoCreateDTO,EstablecimientoEditDTO,EstablecimientoListDTO,
 EstablecimientoResponseDTO,idEstablecimiento} from '../models/establecimiento.model';
 
@@ -40,33 +40,6 @@ export class EstablecimientosService {
     return this.http
       .get<ApiResponseEstablecimiento<EstablecimientoListDTO[]>>(this.baseApiUrl, { params })
       .pipe(catchError(this.handleError));
-  }
-
-  /**
-   * CONTABILIDAD DINÁMICA: Obtiene el total de establecimientos para el dashboard
-   * Solicita un pageSize grande (10000) para obtener prácticamente todos los registros
-   * y contar el total real desde el backend
-   * @returns Promise<number> Total de establecimientos
-   */
-  async obtenerTotalEstablecimientos(): Promise<number> {
-    try {
-      const params = new HttpParams()
-        .set('fldPageNumber', '1')
-        .set('fldPageSize', '10000');
-      
-      const res = await firstValueFrom(
-        this.http.get<ApiResponseEstablecimiento<EstablecimientoListDTO[]>>(this.baseApiUrl, { params })
-          .pipe(catchError(this.handleError))
-      );
-      
-      if (res?.codigoEstatus === 1 && res.cuerpoDeRespuesta) {
-        return res.cuerpoDeRespuesta.length;
-      }
-      return 0;
-    } catch (error) {
-      console.error('Error al obtener total de establecimientos:', error);
-      return 0;
-    }
   }
 
   /**

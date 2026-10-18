@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError, firstValueFrom } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 import { catchError, map} from 'rxjs/operators';
 import {ApiResponse,ListEmpresaDTO,CreateEmpresaDTO,EditEmpresaDTO
 } from '../models/empresa.model';
@@ -53,30 +53,6 @@ export class EmpresasService {
       return JSON.parse(texto);
     } catch {
       return { codigoEstatus: 1, mensaje: 'Eliminado correctamente.', cuerpoDeRespuesta: null };
-    }
-  }
-
-  /**
-   * CONTABILIDAD DINÁMICA: Obtiene el total de empresas para el dashboard
-   * Solicita un pageSize grande (10000) para obtener prácticamente todas las empresas
-   * y contar el total real desde el backend
-   * @returns Promise<number> Total de empresas
-   */
-  async obtenerTotalEmpresas(): Promise<number> {
-    try {
-      const apiUrl = `${this.baseApiUrl}?fldPageNumber=1&fldPageSize=10000`;
-      const res = await firstValueFrom(
-        this.http.get<ApiResponse<ListEmpresaDTO[]>>(apiUrl)
-          .pipe(catchError(this.handleError))
-      );
-      
-      if (res?.codigoEstatus === 1 && res.cuerpoDeRespuesta) {
-        return res.cuerpoDeRespuesta.length;
-      }
-      return 0;
-    } catch (error) {
-      console.error('Error al obtener total de empresas:', error);
-      return 0;
     }
   }
 
