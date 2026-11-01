@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal, OnInit, DestroyRef } from '@angular/core';
+import { Component, inject, signal, OnInit, DestroyRef, computed, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
 import { EtiquetasListadoPublicComponent } from '../../../cliente/components/etiquetas-listado-public/etiquetas-listado-public.component';
@@ -11,10 +11,13 @@ import { listarComentario } from '../../../models/comentario.model';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { EstablecimientoFormComponent } from '../../../shared/components/establecimiento-form/establecimiento-form.component';
+import { CardEstablecimientoComponent } from '../../../cliente/components/card-establecimiento/card-establecimiento.component';
 import { ToastService } from '../../../shared/services/toast.service';
 import { TextareaFieldComponent } from '../../../shared/components/form-fields/textarea-field.component';
 import { EstablecimientoFormSubmitEvent, EstablecimientoFormValue } from '../../../shared/models/establecimiento-form.model';
 import { imagenesAConservar } from '../../../utils/imagenes-conservadas';
+import { pendientesFicha } from '../../../utils/estado-ficha';
+import { EstablecimientoListDTO } from '../../../models/establecimiento.model';
 
 /** Los 7 días + la promo 300 Lugares, en el orden en que se pintan en el modal. */
 export const DIAS_PROMO = [
@@ -26,6 +29,12 @@ export const DIAS_PROMO = [
   { key: 'fldPromoSabado', label: 'Sábado' },
   { key: 'fldPromoDomingo', label: 'Domingo' },
 ] as const satisfies readonly { key: keyof BotaneroPromosDTO; label: string }[];
+
+const DIAS_LABORALES = DIAS_PROMO.slice(0, 5).map(dia => dia.key);
+const CLAVE_PROMO_HOY: Record<string, keyof BotaneroPromosDTO> = {
+  Mon: 'fldPromoLunes', Tue: 'fldPromoMartes', Wed: 'fldPromoMiercoles',
+  Thu: 'fldPromoJueves', Fri: 'fldPromoViernes', Sat: 'fldPromoSabado', Sun: 'fldPromoDomingo',
+};
 
 /** El backend hace nullToEmpty en todo, así que el form nunca manda null. */
 function dtoToPromos(dto: BotaneroEstablecimientoDTO): BotaneroPromosDTO {
@@ -97,7 +106,7 @@ function dtoToFormValue(dto: BotaneroEstablecimientoDTO): EstablecimientoFormVal
 @Component({
   selector: 'app-establecimiento-detalle',
   standalone: true,
-  imports: [CommonModule, EtiquetasListadoPublicComponent, FormsModule, RouterLink, LoadingSpinnerComponent, ModalComponent, EstablecimientoFormComponent, TextareaFieldComponent],
+  imports: [CommonModule, EtiquetasListadoPublicComponent, FormsModule, RouterLink, LoadingSpinnerComponent, ModalComponent, EstablecimientoFormComponent, TextareaFieldComponent, CardEstablecimientoComponent],
   templateUrl: './establecimiento-detalle.component.html',
   styleUrls: ['./establecimiento-detalle.component.css']
 })
@@ -105,6 +114,7 @@ export class EstablecimientoDetalleComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly botaneroService = inject(BotaneroService);
   private readonly toastService = inject(ToastService);
+  private readonly formularioEditor = viewChild(EstablecimientoFormComponent);
 
   private readonly destroyRef = inject(DestroyRef);
   private consultas = new Subscription();
@@ -127,6 +137,50 @@ export class EstablecimientoDetalleComponent implements OnInit {
   showPromosModal = signal(false);
   guardandoPromos = signal(false);
   promos: BotaneroPromosDTO | null = null;
+  readonly diaOrigenCopia = signal<keyof BotaneroPromosDTO>('fldPromoLunes');
+  readonly mostrarVistaPrevia = signal(false);
+
+  readonly fichaCompletitud = computed(() => {
+    const lugar = this.lugar();
+    if (!lugar) return { porcentaje: 0, faltantes: [] as { key: string; nombre: string }[] };
+    const faltanFicha = pendientesFicha(lugar);
+    const diasSinPromo = DIAS_PROMO.every(dia => !lugar[dia.key]?.trim());
+    const secciones = [
+      { key: 'foto', nombre: 'Foto de perfil', falta: faltanFicha.includes('Fotos') },
+      { key: 'horarios', nombre: 'Horarios', falta: faltanFicha.includes('Horario') },
+      { key: 'promos', nombre: 'Promociones', falta: diasSinPromo },
+      { key: 'menu', nombre: 'Menú', falta: faltanFicha.includes('Menú') },
+    ];
+    const faltantes = secciones.filter(seccion => seccion.falta).map(({ key, nombre }) => ({ key, nombre }));
+    return { porcentaje: Math.round(((secciones.length - faltantes.length) / secciones.length) * 100), faltantes };
+  });
+
+  readonly sinPromoHoy = computed(() => {
+    const lugar = this.lugar();
+    if (!lugar) return false;
+    const dia = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Mexico_City', weekday: 'short' }).format(new Date());
+    const clave = CLAVE_PROMO_HOY[dia];
+    return !!clave && !lugar[clave]?.trim();
+  });
+
+  readonly fichasVistaPrevia = computed<EstablecimientoListDTO[]>(() => {
+    const lugar = this.lugar();
+    if (!lugar) return [];
+    const editor = this.formularioEditor();
+    const values = editor?.form() ?? dtoToFormValue(lugar);
+    const filePreview = editor?.filePreviews().foto;
+    const imagen = filePreview
+      ? `data:image/jpeg;base64,${filePreview}`
+      : lugar.imagenesPerfil?.[0] ?? '';
+    return [{
+      ...lugar,
+      fldNombre: values.fldNombre,
+      fldDescripcion: values.fldDescripcion ?? '',
+      fldSugerenciaDeLaCasa: values.fldSugerenciaDeLaCasa ?? '',
+      fldImgRefs: imagen,
+      imagenesPerfil: imagen ? [imagen] : [],
+    } as EstablecimientoListDTO];
+  });
 
   ngOnInit(): void {
     this.destroyRef.onDestroy(() => this.consultas.unsubscribe());
@@ -185,14 +239,48 @@ export class EstablecimientoDetalleComponent implements OnInit {
   }
 
   cerrarModalEditar(): void {
-    if (!this.guardando()) this.showFormModal.set(false);
+    if (!this.guardando()) {
+      this.showFormModal.set(false);
+      this.mostrarVistaPrevia.set(false);
+    }
   }
 
   abrirModalPromos(): void {
     const lugar = this.lugar();
     if (!lugar) return;
     this.promos = dtoToPromos(lugar);
+    this.diaOrigenCopia.set('fldPromoLunes');
     this.showPromosModal.set(true);
+  }
+
+  copiarPromoATodos(): void {
+    this.copiarPromoA(this.diasPromo.map(dia => dia.key));
+  }
+
+  copiarPromoALunesAViernes(): void {
+    this.copiarPromoA(DIAS_LABORALES);
+  }
+
+  completarFicha(key: string): void {
+    if (key === 'promos') {
+      this.abrirModalPromos();
+      return;
+    }
+    this.abrirModalEditar();
+  }
+
+  abrirVistaPrevia(): void {
+    this.mostrarVistaPrevia.set(true);
+  }
+
+  cerrarVistaPrevia(): void {
+    this.mostrarVistaPrevia.set(false);
+  }
+
+  private copiarPromoA(destinos: readonly (keyof BotaneroPromosDTO)[]): void {
+    if (!this.promos) return;
+    const texto = this.promos[this.diaOrigenCopia()];
+    this.promos = { ...this.promos, ...Object.fromEntries(destinos.map(dia => [dia, texto])) };
   }
 
   cerrarModalPromos(): void {

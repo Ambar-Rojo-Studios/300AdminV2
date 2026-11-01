@@ -17,6 +17,31 @@
     <a class="btn-secondary" [routerLink]="['/detalleEstablecimiento', l.idEstablecimiento]" target="_blank" rel="noopener">Ver ficha pública</a>
   </div>
 
+  <section class="ficha-completa card" aria-labelledby="ficha-completa-titulo">
+    <div class="ficha-completa-cabecera">
+      <div><span class="eyebrow">Tu perfil público</span><h2 id="ficha-completa-titulo">Ficha completa al {{ fichaCompletitud().porcentaje }} %</h2></div>
+      <span class="ficha-progreso" role="img" [attr.aria-label]="'Ficha completa al ' + fichaCompletitud().porcentaje + ' por ciento'">{{ fichaCompletitud().porcentaje }}%</span>
+    </div>
+    @if (fichaCompletitud().faltantes.length) {
+      <p class="pendiente">Completa estos datos para que tus clientes encuentren la información principal:</p>
+      <ul class="ficha-pendientes">
+        @for (seccion of fichaCompletitud().faltantes; track seccion.key) {
+          <li><span>{{ seccion.nombre }}</span><button type="button" class="btn-secondary" (click)="completarFicha(seccion.key)">Completar</button></li>
+        }
+      </ul>
+    } @else {
+      <p class="ficha-lista">Tu ficha ya tiene fotos, horarios, promociones y menú.</p>
+    }
+  </section>
+
+  @if (sinPromoHoy()) {
+    <aside class="aviso-promo-hoy" role="alert">
+      <i class="fas fa-bullhorn" aria-hidden="true"></i>
+      <p>No tienes una promoción cargada para hoy.</p>
+      <button type="button" class="btn-secondary" (click)="abrirModalPromos()">Agregar promoción</button>
+    </aside>
+  }
+
   <section>
     <h2>Estadísticas</h2>
     @if (statsLoading()) { <p role="status">Cargando estadísticas…</p> }
@@ -69,6 +94,7 @@
   <section><h2>Etiquetas de tu ficha</h2><p>La administración gestiona estas etiquetas.</p><app-etiquetas-listado-public [establecimientoId]="l.idEstablecimiento" /></section>
   <app-modal #editorModal [busy]="guardando()" [confirmDiscard]="formDirty()" [open]="showFormModal()" title="Editar información" size="lg" (closed)="cerrarModalEditar()">
     @if (showFormModal()) {
+    <div class="preview-action"><p>Revisa cómo se mostrará la ficha pública.</p><button type="button" class="btn-secondary" (click)="abrirVistaPrevia()"><i class="fas fa-eye" aria-hidden="true"></i> Así lo ve el cliente</button></div>
     <app-establecimiento-form
       mode="botanero"
       formId="establecimientoFormBotanero"
@@ -87,9 +113,23 @@
     </ng-container>
   </app-modal>
 
+  <app-modal [open]="mostrarVistaPrevia()" title="Así lo ve el cliente" size="md" (closed)="cerrarVistaPrevia()">
+    <p class="preview-caption">Vista previa de los cambios actuales. Guarda la ficha para publicarlos.</p>
+    <div class="preview-card"><app-card-establecimiento [establecimientos]="fichasVistaPrevia()" /></div>
+    <ng-container modal-footer><button type="button" class="btn-secondary" (click)="cerrarVistaPrevia()">Volver a editar</button></ng-container>
+  </app-modal>
+
   <app-modal #promosModal [busy]="guardandoPromos()" [confirmDiscard]="promosDirty()" [open]="showPromosModal()" title="Editar promociones" size="lg" (closed)="cerrarModalPromos()">
     @if (promos) {
       <form id="promosFormBotanero" (ngSubmit)="guardarPromos()"><fieldset [disabled]="guardandoPromos()"><legend>Promociones por día</legend><p>Deja vacío un día para quitar su promoción.</p>
+        <div class="copiar-promos">
+          <label for="diaOrigenCopia">Copiar desde</label>
+          <select id="diaOrigenCopia" name="diaOrigenCopia" [ngModel]="diaOrigenCopia()" (ngModelChange)="diaOrigenCopia.set($event)">
+            @for (dia of diasPromo; track dia.key) { <option [value]="dia.key">{{ dia.label }}</option> }
+          </select>
+          <button type="button" class="btn-secondary" (click)="copiarPromoATodos()">Copiar a todos los días</button>
+          <button type="button" class="btn-secondary" (click)="copiarPromoALunesAViernes()">Copiar a lunes a viernes</button>
+        </div>
         @for (dia of diasPromo; track dia.key) {
           <app-textarea-field
             [label]="dia.label"
