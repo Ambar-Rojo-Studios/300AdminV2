@@ -7,6 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { BotaneroService } from '../../../services/botanero.service';
 import { BotaneroStatsDTO, BotaneroEstablecimientoDTO, BotaneroPromosDTO, CanjesResumenBotaneroDTO } from '../../../models/botanero.model';
+import { CanjeDetalleBotaneroDTO } from '../../../models/canje-detalle.model';
 import { listarComentario } from '../../../models/comentario.model';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
@@ -18,6 +19,9 @@ import { EstablecimientoFormSubmitEvent, EstablecimientoFormValue } from '../../
 import { imagenesAConservar } from '../../../utils/imagenes-conservadas';
 import { pendientesFicha } from '../../../utils/estado-ficha';
 import { EstablecimientoListDTO } from '../../../models/establecimiento.model';
+import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
+import { TableColumn } from '../../../shared/models/table.model';
+import { fechaHoyChiapas, formatearFechaCanje, rangoRapidoChiapas, RangoRapidoCanjes } from '../../../utils/canjes-fechas';
 
 /** Los 7 días + la promo 300 Lugares, en el orden en que se pintan en el modal. */
 export const DIAS_PROMO = [
@@ -106,7 +110,7 @@ function dtoToFormValue(dto: BotaneroEstablecimientoDTO): EstablecimientoFormVal
 @Component({
   selector: 'app-establecimiento-detalle',
   standalone: true,
-  imports: [CommonModule, EtiquetasListadoPublicComponent, FormsModule, RouterLink, LoadingSpinnerComponent, ModalComponent, EstablecimientoFormComponent, TextareaFieldComponent, CardEstablecimientoComponent],
+  imports: [CommonModule, EtiquetasListadoPublicComponent, FormsModule, RouterLink, LoadingSpinnerComponent, ModalComponent, EstablecimientoFormComponent, TextareaFieldComponent, CardEstablecimientoComponent, DataTableComponent],
   templateUrl: './establecimiento-detalle.component.html',
   styleUrls: ['./establecimiento-detalle.component.css']
 })
@@ -124,6 +128,19 @@ export class EstablecimientoDetalleComponent implements OnInit {
   readonly canjesLoading = signal(false);
   readonly canjesError = signal('');
   readonly canjesResumen = signal<CanjesResumenBotaneroDTO | null>(null);
+  readonly canjesDetalle = signal<CanjeDetalleBotaneroDTO[]>([]);
+  readonly canjesDetalleTotal = signal(0);
+  readonly canjesDetallePagina = signal(0);
+  readonly canjesDetalleLoading = signal(false);
+  readonly canjesDetalleError = signal('');
+  readonly canjesDesde = signal('');
+  readonly canjesHasta = signal('');
+  readonly canjesTotalPaginas = computed(() => Math.max(1, Math.ceil(this.canjesDetalleTotal() / 20)));
+  readonly canjesColumns: TableColumn<CanjeDetalleBotaneroDTO>[] = [
+    { key: 'fechaHora', label: 'Fecha y hora', format: row => formatearFechaCanje(row.fechaHora) },
+    { key: 'textoPromocion', label: 'Promoción' },
+    { key: 'nombreCliente', label: 'Cliente' },
+  ];
   readonly comentariosLoading = signal(false);
   readonly comentariosError = signal('');
   lugar = signal<BotaneroEstablecimientoDTO | null>(null);
@@ -204,7 +221,7 @@ export class EstablecimientoDetalleComponent implements OnInit {
       },
       error: () => { this.error.set('No pudimos cargar el establecimiento.'); this.cargando.set(false); }
     }));
-    this.cargarStats(id); this.cargarCanjes(id); this.cargarComentarios(id);
+    this.cargarStats(id); this.cargarCanjes(id); this.cargarDetalleCanjes(id); this.cargarComentarios(id);
   }
 
   cargarStats(id = this.lugar()?.idEstablecimiento): void {
@@ -232,6 +249,42 @@ export class EstablecimientoDetalleComponent implements OnInit {
       error: () => { this.canjesError.set('No se pudieron cargar los canjes.'); this.canjesLoading.set(false); },
     }));
   }
+
+  cargarDetalleCanjes(id = this.lugar()?.idEstablecimiento, pagina = this.canjesDetallePagina()): void {
+    if (!id) return;
+    if (!this.canjesDesde() || !this.canjesHasta()) {
+      const hoy = fechaHoyChiapas();
+      const inicio = new Date(`${hoy}T12:00:00Z`);
+      inicio.setUTCDate(inicio.getUTCDate() - 29);
+      this.canjesDesde.set(inicio.toISOString().slice(0, 10));
+      this.canjesHasta.set(hoy);
+    }
+    this.canjesDetalleLoading.set(true); this.canjesDetalleError.set('');
+    this.consultas.add(this.botaneroService.obtenerCanjes(id, {
+      desde: this.canjesDesde(), hasta: this.canjesHasta(), pagina, tamano: 20,
+    }).subscribe({
+      next: response => {
+        const result = response?.codigoEstatus === 1 ? response.cuerpoDeRespuesta : null;
+        this.canjesDetalle.set(result?.filas ?? []);
+        this.canjesDetalleTotal.set(result?.total ?? 0);
+        this.canjesDetallePagina.set(result?.pagina ?? pagina);
+        this.canjesDetalleLoading.set(false);
+      },
+      error: () => { this.canjesDetalleError.set('No se pudieron cargar los canjes recientes.'); this.canjesDetalleLoading.set(false); },
+    }));
+  }
+
+  aplicarFiltroCanjes(rango: RangoRapidoCanjes): void {
+    const dates = rangoRapidoChiapas(rango);
+    this.canjesDesde.set(dates.desde); this.canjesHasta.set(dates.hasta); this.cargarDetalleCanjes(undefined, 0);
+  }
+
+  cambiarFiltroCanjes(campo: 'desde' | 'hasta', valor: string): void {
+    (campo === 'desde' ? this.canjesDesde : this.canjesHasta).set(valor);
+    this.cargarDetalleCanjes(undefined, 0);
+  }
+
+  cambiarPaginaCanjes(pagina: number): void { this.cargarDetalleCanjes(undefined, pagina - 1); }
 
   cargarComentarios(id = this.lugar()?.idEstablecimiento): void {
     if (!id) return;

@@ -7,3 +7,10 @@
 .busqueda input { width: 100%; padding: .65rem .8rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: var(--r-sm); }
 .estado-error { display: grid; justify-items: start; gap: .75rem; padding: 1.5rem; color: var(--danger-text); }
 @media (max-width: 650px) { .table-panel { padding: .75rem; } }
+.btn-detail { border: 0; border-radius: var(--r-sm); padding: .5rem .7rem; color: var(--text); background: var(--surface-2); cursor: pointer; font-weight: 600; }
+.detalle-canjes { min-width: min(70vw, 720px); }
+.filtros-detalle { display: flex; flex-wrap: wrap; align-items: end; gap: .65rem; margin-bottom: 1rem; }
+.filtros-detalle label { display: grid; gap: .3rem; color: var(--text-secondary); font-size: .8rem; }
+.filtros-detalle input { padding: .55rem; border: 1px solid var(--border-strong); border-radius: var(--r-sm); color: var(--text); background: var(--surface); }
+.filtros-rapidos { display: flex; gap: .4rem; margin-right: auto; }
+@media (max-width: 650px) { .detalle-canjes { min-width: 0; } .filtros-rapidos { width: 100%; } }

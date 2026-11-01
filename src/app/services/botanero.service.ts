@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ApiResponseBotanero, BotaneroStatsDTO, BotaneroEstablecimientoDTO, BotaneroPromosDTO, CanjesResumenBotaneroDTO } from '../models/botanero.model';
 import { listarComentario } from '../models/comentario.model';
+import { CanjeDetalleBotaneroDTO, CanjesPaginaDTO, FiltroCanjes } from '../models/canje-detalle.model';
 
 /**
  * Servicio del portal de botaneros. Todos los endpoints requieren
@@ -45,5 +46,16 @@ export class BotaneroService {
 
   obtenerCanjesResumen(id: number): Observable<ApiResponseBotanero<CanjesResumenBotaneroDTO>> {
     return this.http.get<ApiResponseBotanero<CanjesResumenBotaneroDTO>>(`${this.API_URL}/${id}/canjes-resumen`);
+  }
+
+  obtenerCanjes(id: number, filtro: FiltroCanjes): Observable<ApiResponseBotanero<CanjesPaginaDTO<CanjeDetalleBotaneroDTO>>> {
+    const params = new HttpParams()
+      .set('desde', filtro.desde)
+      .set('hasta', filtro.hasta)
+      .set('pagina', filtro.pagina)
+      .set('tamano', filtro.tamano);
+    return this.http.get<ApiResponseBotanero<CanjesPaginaDTO<CanjeDetalleBotaneroDTO>>>(
+      `${this.API_URL}/${id}/canjes`, { params },
+    );
   }
 }

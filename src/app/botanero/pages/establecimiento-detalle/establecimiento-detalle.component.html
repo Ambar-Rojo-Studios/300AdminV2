@@ -74,6 +74,24 @@
     }
   </section>
 
+  <section class="canjes-detalle-panel" aria-labelledby="ultimos-canjes-titulo">
+    <div class="canjes-heading"><div><h2 id="ultimos-canjes-titulo">Últimos canjes</h2><p>Historial de promociones utilizadas.</p></div></div>
+    <div class="canjes-filtros">
+      <button type="button" class="btn-secondary" (click)="aplicarFiltroCanjes('hoy')">Hoy</button>
+      <button type="button" class="btn-secondary" (click)="aplicarFiltroCanjes('semana')">Esta semana</button>
+      <button type="button" class="btn-secondary" (click)="aplicarFiltroCanjes('mes')">Este mes</button>
+      <label>Desde <input type="date" [value]="canjesDesde()" (change)="cambiarFiltroCanjes('desde', $any($event.target).value)" /></label>
+      <label>Hasta <input type="date" [value]="canjesHasta()" (change)="cambiarFiltroCanjes('hasta', $any($event.target).value)" /></label>
+    </div>
+    @if (canjesDetalleError()) {
+      <div class="canjes-error" role="alert"><p>{{ canjesDetalleError() }}</p><button type="button" class="btn-secondary" (click)="cargarDetalleCanjes()">Reintentar</button></div>
+    } @else {
+      <app-data-table [columns]="canjesColumns" [data]="canjesDetalle()" [loading]="canjesDetalleLoading()"
+        [emptyMessage]="'Sin canjes en este periodo'" [currentPage]="canjesDetallePagina() + 1"
+        [totalPages]="canjesTotalPaginas()" (pageChange)="cambiarPaginaCanjes($event)" />
+    }
+  </section>
+
   <section>
     <h2>Promociones</h2>
     <dl class="promos">

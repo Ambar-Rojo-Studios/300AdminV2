@@ -660,3 +660,7 @@ input[type="file"]:hover::file-selector-button { background: var(--accent-soft);
     transition-duration: 0.01ms !important;
   }
 }
+app-establecimiento-detalle .canjes-detalle-panel { margin-top: 1rem; padding: 1.25rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); }
+app-establecimiento-detalle .canjes-filtros { display: flex; flex-wrap: wrap; align-items: end; gap: .55rem; margin: 1rem 0; }
+app-establecimiento-detalle .canjes-filtros label { display: grid; gap: .3rem; color: var(--text-secondary); font-size: .8rem; }
+app-establecimiento-detalle .canjes-filtros input { padding: .55rem; border: 1px solid var(--border-strong); border-radius: var(--r-sm); color: var(--text); background: var(--surface); }

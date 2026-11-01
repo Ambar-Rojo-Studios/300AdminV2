@@ -2,16 +2,19 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { DataTableComponent } from '../../../shared/components/data-table/data-table.component';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { TableColumn, SortEvent } from '../../../shared/models/table.model';
 import { CanjesResumenDTO } from '../../../models/canjes-resumen.model';
+import { CanjeDetalleAdminDTO, CanjesPaginaDTO } from '../../../models/canje-detalle.model';
 import { CanjesService } from '../../../services/canjes.service';
+import { csvCell, fechaHoyChiapas, formatearFechaCanje, rangoRapidoChiapas, RangoRapidoCanjes } from '../../../utils/canjes-fechas';
 
 const TAMANO_PAGINA = 15;
 
 @Component({
   selector: 'app-canjes',
   standalone: true,
-  imports: [CommonModule, DataTableComponent],
+  imports: [CommonModule, DataTableComponent, ModalComponent],
   templateUrl: './canjes.component.html',
   styleUrl: './canjes.component.css',
 })
@@ -24,6 +27,22 @@ export class CanjesComponent implements OnInit {
   readonly pagina = signal(1);
   readonly sortKey = signal<string | null>('nombreEstablecimiento');
   readonly sortDirection = signal<'asc' | 'desc' | null>('asc');
+  readonly establecimientoSeleccionado = signal<CanjesResumenDTO | null>(null);
+  readonly detalleFilas = signal<CanjeDetalleAdminDTO[]>([]);
+  readonly detalleTotal = signal(0);
+  readonly detallePagina = signal(0);
+  readonly detalleCargando = signal(false);
+  readonly detalleError = signal('');
+  readonly exportando = signal(false);
+  readonly desde = signal('');
+  readonly hasta = signal('');
+  readonly detalleColumns: TableColumn<CanjeDetalleAdminDTO>[] = [
+    { key: 'fechaHora', label: 'Fecha y hora', format: row => formatearFechaCanje(row.fechaHora) },
+    { key: 'textoPromocion', label: 'Promoción' },
+    { key: 'nombreCliente', label: 'Cliente' },
+    { key: 'codigo', label: 'Código' },
+  ];
+  readonly totalPaginasDetalle = computed(() => Math.max(1, Math.ceil(this.detalleTotal() / 20)));
 
   readonly columns: TableColumn<CanjesResumenDTO>[] = [
     { key: 'nombreEstablecimiento', label: 'Establecimiento', sortable: true },
@@ -91,4 +110,81 @@ export class CanjesComponent implements OnInit {
   }
 
   readonly trackEstablecimiento = (_index: number, row: CanjesResumenDTO) => row.idEstablecimiento;
+
+  abrirDetalle(row: CanjesResumenDTO): void {
+    this.establecimientoSeleccionado.set(row);
+    const hoy = fechaHoyChiapas();
+    const inicio = new Date(`${hoy}T12:00:00Z`);
+    inicio.setUTCDate(inicio.getUTCDate() - 29);
+    this.desde.set(inicio.toISOString().slice(0, 10));
+    this.hasta.set(hoy);
+    this.cargarDetalle(0);
+  }
+
+  cerrarDetalle(): void { this.establecimientoSeleccionado.set(null); }
+
+  aplicarRango(rango: RangoRapidoCanjes): void {
+    const dates = rangoRapidoChiapas(rango);
+    this.desde.set(dates.desde); this.hasta.set(dates.hasta); this.cargarDetalle(0);
+  }
+
+  cambiarFecha(campo: 'desde' | 'hasta', valor: string): void {
+    (campo === 'desde' ? this.desde : this.hasta).set(valor);
+    this.cargarDetalle(0);
+  }
+
+  cargarDetalle(pagina = this.detallePagina()): void {
+    const establecimiento = this.establecimientoSeleccionado();
+    if (!establecimiento) return;
+    this.detalleCargando.set(true); this.detalleError.set('');
+    this.service.listarDetalle(establecimiento.idEstablecimiento, {
+      desde: this.desde(), hasta: this.hasta(), pagina, tamano: 20,
+    }).subscribe({
+      next: response => {
+        const result = response?.codigoEstatus === 1 ? response.cuerpoDeRespuesta : null;
+        this.detalleFilas.set(result?.filas ?? []);
+        this.detalleTotal.set(result?.total ?? 0);
+        this.detallePagina.set(result?.pagina ?? pagina);
+        this.detalleCargando.set(false);
+      },
+      error: () => { this.detalleError.set('No se pudieron cargar los canjes.'); this.detalleCargando.set(false); },
+    });
+  }
+
+  onDetallePageChange(paginaUno: number): void { this.cargarDetalle(paginaUno - 1); }
+
+  async exportarCsv(): Promise<void> {
+    const establecimiento = this.establecimientoSeleccionado();
+    if (!establecimiento || this.detalleTotal() === 0 || this.exportando()) return;
+    this.exportando.set(true);
+    try {
+      const rows: CanjeDetalleAdminDTO[] = [];
+      let pagina = 0;
+      let total = this.detalleTotal();
+      while (rows.length < total) {
+        const response = await new Promise<CanjeDetalleAdminDTO[]>((resolve, reject) => {
+          this.service.listarDetalle(establecimiento.idEstablecimiento, {
+            desde: this.desde(), hasta: this.hasta(), pagina, tamano: 100,
+          }).subscribe({
+            next: value => value?.codigoEstatus === 1
+              ? resolve(value.cuerpoDeRespuesta?.filas ?? []) : reject(new Error('Respuesta inválida')),
+            error: reject,
+          });
+        });
+        rows.push(...response); total = Math.min(total, rows.length + response.length);
+        if (response.length === 0) break;
+        pagina++;
+      }
+      const csv = [
+        ['Fecha y hora', 'Promoción', 'Cliente', 'Código'].map(csvCell).join(','),
+        ...rows.map(row => [formatearFechaCanje(row.fechaHora), row.textoPromocion, row.nombreCliente, row.codigo].map(csvCell).join(',')),
+      ].join('\r\n');
+      const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' }));
+      const link = document.createElement('a'); link.href = url;
+      link.download = `canjes-${establecimiento.idEstablecimiento}-${this.desde()}-${this.hasta()}.csv`;
+      link.click(); URL.revokeObjectURL(url);
+    } catch {
+      this.detalleError.set('No se pudo exportar el CSV. Intenta de nuevo.');
+    } finally { this.exportando.set(false); }
+  }
 }

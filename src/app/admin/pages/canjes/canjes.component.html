@@ -30,6 +30,34 @@
       [trackByFn]="trackEstablecimiento"
       (sortChange)="onSort($event)"
       (pageChange)="onPageChange($event)"
-    />
+    >
+      <ng-template let-row>
+        <button type="button" class="btn-detail" (click)="abrirDetalle(row)">Ver canjes</button>
+      </ng-template>
+    </app-data-table>
   }
 </section>
+
+<app-modal [open]="establecimientoSeleccionado() !== null" [title]="'Canjes · ' + (establecimientoSeleccionado()?.nombreEstablecimiento ?? '')" size="lg" (closed)="cerrarDetalle()">
+  <section class="detalle-canjes" aria-label="Detalle de canjes del establecimiento">
+    <div class="filtros-detalle">
+      <div class="filtros-rapidos" aria-label="Filtros rápidos">
+        <button type="button" class="btn-secondary" (click)="aplicarRango('hoy')">Hoy</button>
+        <button type="button" class="btn-secondary" (click)="aplicarRango('semana')">Esta semana</button>
+        <button type="button" class="btn-secondary" (click)="aplicarRango('mes')">Este mes</button>
+      </div>
+      <label>Desde <input type="date" [value]="desde()" (change)="cambiarFecha('desde', $any($event.target).value)" /></label>
+      <label>Hasta <input type="date" [value]="hasta()" (change)="cambiarFecha('hasta', $any($event.target).value)" /></label>
+      <button type="button" class="btn-primary" [disabled]="detalleTotal() === 0 || exportando()" (click)="exportarCsv()">
+        {{ exportando() ? 'Preparando CSV…' : 'Exportar CSV' }}
+      </button>
+    </div>
+    @if (detalleError()) {
+      <div class="estado-error" role="alert"><p>{{ detalleError() }}</p><button type="button" class="btn-primary" (click)="cargarDetalle()">Reintentar</button></div>
+    } @else {
+      <app-data-table [columns]="detalleColumns" [data]="detalleFilas()" [loading]="detalleCargando()"
+        [emptyMessage]="'Sin canjes en este periodo'" [currentPage]="detallePagina() + 1"
+        [totalPages]="totalPaginasDetalle()" (pageChange)="onDetallePageChange($event)" />
+    }
+  </section>
+</app-modal>
