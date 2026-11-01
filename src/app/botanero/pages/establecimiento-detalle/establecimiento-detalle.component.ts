@@ -6,7 +6,7 @@ import { EtiquetasListadoPublicComponent } from '../../../cliente/components/eti
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { BotaneroService } from '../../../services/botanero.service';
-import { BotaneroStatsDTO, BotaneroEstablecimientoDTO, BotaneroPromosDTO } from '../../../models/botanero.model';
+import { BotaneroStatsDTO, BotaneroEstablecimientoDTO, BotaneroPromosDTO, CanjesResumenBotaneroDTO } from '../../../models/botanero.model';
 import { listarComentario } from '../../../models/comentario.model';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
@@ -121,6 +121,9 @@ export class EstablecimientoDetalleComponent implements OnInit {
   readonly formDirty = signal(false);
   readonly statsLoading = signal(false);
   readonly statsError = signal('');
+  readonly canjesLoading = signal(false);
+  readonly canjesError = signal('');
+  readonly canjesResumen = signal<CanjesResumenBotaneroDTO | null>(null);
   readonly comentariosLoading = signal(false);
   readonly comentariosError = signal('');
   lugar = signal<BotaneroEstablecimientoDTO | null>(null);
@@ -189,7 +192,7 @@ export class EstablecimientoDetalleComponent implements OnInit {
 
   cargarVista(id = this.lugar()?.idEstablecimiento ?? Number(this.route.snapshot.paramMap.get('id'))): void {
     this.consultas.unsubscribe(); this.consultas = new Subscription();
-    this.lugar.set(null); this.stats.set(null); this.comentarios.set([]);
+    this.lugar.set(null); this.stats.set(null); this.canjesResumen.set(null); this.comentarios.set([]);
     this.error.set(null); this.cargando.set(true);
     this.showFormModal.set(false); this.showPromosModal.set(false);
     if (!Number.isInteger(id) || id <= 0) { this.error.set('Establecimiento no válido.'); this.cargando.set(false); return; }
@@ -201,7 +204,7 @@ export class EstablecimientoDetalleComponent implements OnInit {
       },
       error: () => { this.error.set('No pudimos cargar el establecimiento.'); this.cargando.set(false); }
     }));
-    this.cargarStats(id); this.cargarComentarios(id);
+    this.cargarStats(id); this.cargarCanjes(id); this.cargarComentarios(id);
   }
 
   cargarStats(id = this.lugar()?.idEstablecimiento): void {
@@ -214,6 +217,19 @@ export class EstablecimientoDetalleComponent implements OnInit {
         this.statsLoading.set(false);
       },
       error: () => { this.statsError.set('No se pudieron cargar las estadísticas.'); this.statsLoading.set(false); }
+    }));
+  }
+
+  cargarCanjes(id = this.lugar()?.idEstablecimiento): void {
+    if (!id) return;
+    this.canjesLoading.set(true); this.canjesError.set('');
+    this.consultas.add(this.botaneroService.obtenerCanjesResumen(id).subscribe({
+      next: response => {
+        if (response?.codigoEstatus === 1 && response.cuerpoDeRespuesta) this.canjesResumen.set(response.cuerpoDeRespuesta);
+        else this.canjesError.set('No se pudieron cargar los canjes.');
+        this.canjesLoading.set(false);
+      },
+      error: () => { this.canjesError.set('No se pudieron cargar los canjes.'); this.canjesLoading.set(false); },
     }));
   }
 

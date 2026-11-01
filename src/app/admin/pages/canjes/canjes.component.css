@@ -1,0 +1,9 @@
+:host { display: block; }
+.page-header { padding: 1.5rem; margin-bottom: 1.25rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); }
+.page-header h1 { margin-top: .45rem; font-size: 1.8rem; }
+.page-header p { margin-top: .35rem; color: var(--text-secondary); }
+.table-panel { padding: 1.25rem; }
+.busqueda { display: grid; gap: .4rem; max-width: 28rem; margin-bottom: 1.25rem; color: var(--text-secondary); font-size: .85rem; }
+.busqueda input { width: 100%; padding: .65rem .8rem; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: var(--r-sm); }
+.estado-error { display: grid; justify-items: start; gap: .75rem; padding: 1.5rem; color: var(--danger-text); }
+@media (max-width: 650px) { .table-panel { padding: .75rem; } }

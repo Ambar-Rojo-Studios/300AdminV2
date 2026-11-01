@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { ApiResponseBotanero, BotaneroStatsDTO, BotaneroEstablecimientoDTO, BotaneroPromosDTO } from '../models/botanero.model';
+import { ApiResponseBotanero, BotaneroStatsDTO, BotaneroEstablecimientoDTO, BotaneroPromosDTO, CanjesResumenBotaneroDTO } from '../models/botanero.model';
 import { listarComentario } from '../models/comentario.model';
 
 /**
@@ -41,5 +41,9 @@ export class BotaneroService {
 
   obtenerStats(id: number): Observable<ApiResponseBotanero<BotaneroStatsDTO>> {
     return this.http.get<ApiResponseBotanero<BotaneroStatsDTO>>(`${this.API_URL}/${id}/stats`);
+  }
+
+  obtenerCanjesResumen(id: number): Observable<ApiResponseBotanero<CanjesResumenBotaneroDTO>> {
+    return this.http.get<ApiResponseBotanero<CanjesResumenBotaneroDTO>>(`${this.API_URL}/${id}/canjes-resumen`);
   }
 }

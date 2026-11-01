@@ -57,6 +57,23 @@
     }
   </section>
 
+  <section class="canjes-panel" aria-labelledby="canjes-titulo">
+    <div class="canjes-heading"><h2 id="canjes-titulo">Canjes</h2><p>Promociones utilizadas en tu establecimiento.</p></div>
+    @if (canjesLoading()) {
+      <p role="status">Cargando canjes…</p>
+    } @else if (canjesError()) {
+      <div class="canjes-error" role="alert"><p>{{ canjesError() }}</p><button type="button" class="btn-secondary" (click)="cargarCanjes()">Reintentar</button></div>
+    } @else if (canjesResumen(); as resumen) {
+      <dl class="canjes-tarjetas">
+        <div><dt>Canjes hoy</dt><dd>{{ resumen.hoy }}</dd></div>
+        <div><dt>Esta semana</dt><dd>{{ resumen.semana }}</dd></div>
+        <div><dt>Este mes</dt><dd>{{ resumen.mes }}</dd></div>
+      </dl>
+    } @else {
+      <p class="pendiente">No hay datos de canjes para mostrar.</p>
+    }
+  </section>
+
   <section>
     <h2>Promociones</h2>
     <dl class="promos">

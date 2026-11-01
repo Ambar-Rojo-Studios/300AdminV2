@@ -240,6 +240,12 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'canjes',
+        title: 'Canjes — Administración — 300 Lugares',
+        loadComponent: () =>
+          import('./admin/pages/canjes/canjes.component').then(m => m.CanjesComponent),
+      },
+      {
         path: 'comentarios',
         loadComponent: () =>
           import('./admin/pages/comentarios/comentarios.component').then(

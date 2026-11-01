@@ -1,0 +1,35 @@
+<header class="page-header">
+  <div>
+    <span class="eyebrow">Actividad</span>
+    <h1>Canjes por establecimiento</h1>
+    <p>Uso de promociones hoy, esta semana, este mes y en total.</p>
+  </div>
+</header>
+
+<section class="table-panel card" aria-label="Resumen de canjes">
+  <label class="busqueda">
+    <span>Buscar establecimiento</span>
+    <input type="search" [value]="busqueda()" (input)="onBuscar($any($event.target).value)" placeholder="Nombre del establecimiento" />
+  </label>
+
+  @if (error()) {
+    <div class="estado-error" role="alert">
+      <p>{{ error() }}</p>
+      <button type="button" class="btn-primary" (click)="cargar()">Reintentar</button>
+    </div>
+  } @else {
+    <app-data-table
+      [columns]="columns"
+      [data]="paginaFilas()"
+      [loading]="cargando()"
+      [emptyMessage]="busqueda() ? 'No hay establecimientos que coincidan con la búsqueda.' : 'Aún no hay establecimientos registrados.'"
+      [currentPage]="paginaActual()"
+      [totalPages]="totalPaginas()"
+      [sortKey]="sortKey()"
+      [sortDirection]="sortDirection()"
+      [trackByFn]="trackEstablecimiento"
+      (sortChange)="onSort($event)"
+      (pageChange)="onPageChange($event)"
+    />
+  }
+</section>

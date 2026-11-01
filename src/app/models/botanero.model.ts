@@ -19,6 +19,15 @@ export interface BotaneroStatsDTO {
   totalCanjes: number;
 }
 
+export interface CanjesResumenBotaneroDTO {
+  idEstablecimiento: number;
+  nombreEstablecimiento: string;
+  hoy: number;
+  semana: number;
+  mes: number;
+  total: number;
+}
+
 /**
  * Establecimiento tal como lo devuelve el backend en /api/botanero/**.
  * Refleja BotaneroEstablecimientoDTO.java. Time/Date llegan como string en JSON.

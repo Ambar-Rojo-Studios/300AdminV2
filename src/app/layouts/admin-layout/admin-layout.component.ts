@@ -43,7 +43,8 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { path: '/admin/capsulas', label: 'Cápsulas culturales', icon: 'fa-book-open' },
       { path: '/admin/comentarios', label: 'Comentarios', icon: 'fa-comments' },
-      { path: '/admin/historial', label: 'Historial de códigos', icon: 'fa-clock-rotate-left' }
+      { path: '/admin/historial', label: 'Historial de códigos', icon: 'fa-clock-rotate-left' },
+      { path: '/admin/canjes', label: 'Canjes', icon: 'fa-ticket' }
     ]
   },
   {

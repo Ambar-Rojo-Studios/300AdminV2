@@ -14,6 +14,12 @@ section h2 { margin-bottom: 1rem; font-size: 1.15rem; }
 .stats > div { background: var(--surface-2); border-radius: var(--r-md); padding: 1rem; }
 .stats dt { color: var(--text-secondary); font-size: .85rem; }
 .stats dd { font-size: 1.4rem; font-weight: 700; margin: .5rem 0 0; }
+.canjes-heading p { margin-top: -.65rem; margin-bottom: 1rem; color: var(--text-secondary); font-size: .9rem; }
+.canjes-tarjetas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.canjes-tarjetas > div { padding: 1rem; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); }
+.canjes-tarjetas dt { color: var(--text-secondary); font-size: .85rem; }
+.canjes-tarjetas dd { margin-top: .4rem; font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.canjes-error { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; color: var(--danger-text); }
 .promos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .promos dt { font-weight: 600; }
 .promos > div { padding: 1rem; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); }
@@ -26,7 +32,7 @@ section h2 { margin-bottom: 1rem; font-size: 1.15rem; }
 fieldset { border: 0; min-width: 0; padding: 0; } legend { font-weight: 600; margin-bottom: .5rem; }
 .error { color: var(--danger); }
 @media (max-width: 620px) { .detalle-header { align-items: start; flex-direction: column; padding: 1.25rem; gap: 1rem; } .detalle-header img { width: 72px; height: 72px; } }
-@media (max-width: 620px) { .stats, .promos { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .stats, .promos, .canjes-tarjetas { grid-template-columns: 1fr; } }
 .ficha-completa { padding: 1.25rem; }
 .ficha-completa-cabecera { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
 .ficha-completa-cabecera h2 { margin: .35rem 0 0; font-size: 1.2rem; }

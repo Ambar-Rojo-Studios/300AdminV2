@@ -17,6 +17,7 @@ describe('Panel del botanero', () => {
       { provide: BotaneroService, useValue: {
         obtenerEstablecimiento: () => of({ codigoEstatus: 1, cuerpoDeRespuesta: lugar }),
         obtenerStats: () => throwError(() => new Error('sin conexión')),
+        obtenerCanjesResumen: () => of({ codigoEstatus: 1, mensaje: 'ok', cuerpoDeRespuesta: { idEstablecimiento: 1, nombreEstablecimiento: 'Lugar', hoy: 0, semana: 0, mes: 0, total: 0 } }),
         listarComentarios: () => throwError(() => new Error('sin conexión')),
         editarEstablecimiento: editar
       } }
