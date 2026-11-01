@@ -238,3 +238,6 @@ form {
 
 .mensaje--success { background: #2e7d32; color: #fff; }
 .mensaje--error { background: #c62828; color: #fff; }
+.password-toggle { background: transparent; color: var(--accent); border: 0; box-shadow: none; width: auto; padding: .5rem 0; cursor: pointer; }
+.registro-exito { display: grid; gap: 1rem; text-align: center; }
+.registro-login { text-align: center; margin-top: 1rem; }

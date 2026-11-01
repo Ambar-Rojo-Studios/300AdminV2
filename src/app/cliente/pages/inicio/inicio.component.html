@@ -1,25 +1,39 @@
 <section class="inicio">
+  <div class="inicio__bienvenida">
+    <div class="inicio__intro">
+      <span class="eyebrow">Lugares para descubrir</span>
+      <h1>Tu próximo lugar <span>favorito.</span></h1>
+      <p>Descubre lugares, consulta su menú y encuentra cómo llegar. Tú eliges el plan.</p>
+      <div class="inicio__acciones">
+        <a class="btn-primary" routerLink="/buscar">Explorar lugares <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+        <a class="btn-secondary" routerLink="/mapa"><i class="fas fa-map-location-dot" aria-hidden="true"></i> Ver mapa</a>
+      </div>
+    </div>
   @if (cargando()) {
-    <div class="inicio__loading">Cargando…</div>
+    <div class="inicio__loading" role="status"><span class="loading-spinner" aria-hidden="true"></span> Cargando lugares…</div>
   } @else if (error()) {
-    <div class="inicio__error">{{ error() }}</div>
+    <div class="inicio__error" role="alert">{{ error() }} <button type="button" class="btn-secondary" (click)="ngOnInit()">Reintentar</button></div>
+  } @else if (!establecimientos().length) {
+    <p role="status">Aún no hay lugares disponibles. Vuelve pronto.</p>
   } @else {
     <section class="inicio__hero">
       <app-carrusel-establecimientos
         [data]="carrusel()"
       ></app-carrusel-establecimientos>
     </section>
+  }
+  </div>
 
+  @if (!cargando() && !error() && establecimientos().length) {
     <section class="inicio__cards">
-      <h2 class="inicio__section-title">Establecimientos destacados</h2>
+      <div class="inicio__section-heading"><div><span class="eyebrow">Inspírate</span><h2 class="inicio__section-title">Establecimientos destacados</h2><p>Conoce sus detalles y encuentra el lugar para tu siguiente salida.</p></div><a routerLink="/buscar">Buscar un lugar <i class="fas fa-arrow-right" aria-hidden="true"></i></a></div>
       <app-card-establecimiento
         [establecimientos]="establecimientos()"
-        (cardClick)="irAlDetalle($event)"
       ></app-card-establecimiento>
     </section>
 
     <section class="inicio__mapa">
-      <h2 class="inicio__section-title">Ubicación en el mapa</h2>
+      <div class="inicio__section-heading"><div><span class="eyebrow">Cerca de tu próximo plan</span><h2 class="inicio__section-title">Ubicación en el mapa</h2><p>Selecciona un lugar para conocerlo.</p></div></div>
       <app-mapa-establecimiento
         [establecimientos]="markers()"
         [height]="'420px'"

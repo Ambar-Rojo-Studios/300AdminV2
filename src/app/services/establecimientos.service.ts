@@ -52,7 +52,7 @@ export class EstablecimientosService {
    * @param foto4 Cuarto archivo de imagen (opcional)
    * @returns Observable con la respuesta del servidor
    */
-  createEstablecimiento(data: EstablecimientoCreateDTO, foto: File, menu?: File, foto2?: File, foto3?: File, foto4?: File):Observable<ApiResponseEstablecimiento<EstablecimientoListDTO>> {
+  createEstablecimiento(data: EstablecimientoCreateDTO, foto: File, menu?: File, foto2?: File, foto3?: File, foto4?: File, foto5?: File, menu2?: File):Observable<ApiResponseEstablecimiento<EstablecimientoListDTO>> {
 
     if (!foto) throw new Error('La foto principal es obligatoria.');
 
@@ -72,7 +72,7 @@ export class EstablecimientosService {
 
     // El backend espera el campo "perfil" repetido una vez por cada imagen (máx. 5),
     // NO "foto"/"foto2"/"foto3"/"foto4". El orden de envío es el orden en que quedan guardadas.
-    [foto, foto2, foto3, foto4].forEach((f) => {
+    [foto, foto2, foto3, foto4, foto5].forEach((f) => {
       if (f) formData.append('perfil', f, f.name);
     });
 
@@ -80,6 +80,7 @@ export class EstablecimientosService {
     if (menu) {
       formData.append('menu', menu, menu.name);
     }
+    if (menu2) formData.append('menu', menu2, menu2.name);
 
     return this.http.post<ApiResponseEstablecimiento<EstablecimientoListDTO>>(
       this.crearUrl,
@@ -99,7 +100,7 @@ export class EstablecimientosService {
    * @param foto4 Un archivo de imagen opcional. Si se envía, reemplazará la cuarta foto existente.
    * @returns Observable con la respuesta del servidor
    */
-  editEstablecimiento(data: EstablecimientoEditDTO, foto?: File, menu?: File, foto2?: File, foto3?: File, foto4?: File):Observable<ApiResponseEstablecimiento<EstablecimientoEditDTO>> {
+  editEstablecimiento(data: EstablecimientoEditDTO, foto?: File, menu?: File, foto2?: File, foto3?: File, foto4?: File, foto5?: File, menu2?: File):Observable<ApiResponseEstablecimiento<EstablecimientoEditDTO>> {
 
     data.fldImgRefs = data.fldImgRefs ?? '';
     data.fldImgRefs2 = data.fldImgRefs2 ?? '';
@@ -112,13 +113,14 @@ export class EstablecimientosService {
     formData.append('datos', new Blob([JSON.stringify(data)], { type: 'application/json' }));
 
     // Igual que en createEstablecimiento: el backend espera "perfil" repetido por archivo, no "foto"/"foto2"/etc.
-    [foto, foto2, foto3, foto4].forEach((f) => {
+    [foto, foto2, foto3, foto4, foto5].forEach((f) => {
       if (f) formData.append('perfil', f, f.name);
     });
 
     if (menu) {
       formData.append('menu', menu, menu.name);
     }
+    if (menu2) formData.append('menu', menu2, menu2.name);
     
     return this.http.put<ApiResponseEstablecimiento<EstablecimientoEditDTO>>(
       this.editUrl,

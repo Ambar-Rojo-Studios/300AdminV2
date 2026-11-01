@@ -50,6 +50,10 @@ export interface EstablecimientoFormValue extends DiaSemanaKey {
   fldImgRefs3: string | null;
   fldImgRefs4: string | null;
   fldMenu: string | null;
+  fldImgRefs5?: string | null;
+  fldMenu2?: string | null;
+  imagenesPerfil?: string[];
+  imagenesMenu?: string[];
 }
 
 /** Archivos nuevos seleccionados por el usuario (null = sin cambios / no aplica). */
@@ -58,6 +62,8 @@ export interface EstablecimientoFormFiles {
   foto2: File | null;
   foto3: File | null;
   foto4: File | null;
+  foto5?: File | null;
+  menu2?: File | null;
   menu: File | null;
 }
 

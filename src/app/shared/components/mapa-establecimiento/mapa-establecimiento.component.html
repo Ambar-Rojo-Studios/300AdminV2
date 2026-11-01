@@ -3,6 +3,7 @@
   @if (esModoSeleccion() && showLinkInput) {
     <!-- Sección de Coordenadas y Enlace de Google Maps (solo modo selección) -->
     <div class="coords-section">
+      @if (showCoordinateFields) {
       <div class="form-group">
         <label for="mapaCoordLat_{{ modo }}">Latitud</label>
         <input
@@ -29,6 +30,7 @@
         />
       </div>
 
+      }
       <div class="form-group link-section">
         <label for="googleMapsLink_{{ modo }}">Enlace de Google Maps</label>
         <div class="input-with-button">
@@ -87,7 +89,9 @@
     <div class="map-container" [style.height]="height">
       <div #mapContainer id="map-{{ modo }}" class="map-container-inner"></div>
 
-      @if (!isMapReady()) {
+      @if (mapError()) {
+        <div class="map-loading" role="alert"><p>{{ mapError() }}</p><button type="button" class="btn-secondary" (click)="reintentarMapa()">Reintentar mapa</button></div>
+      } @else if (!isMapReady()) {
         <div class="map-loading">
           <div class="loading-spinner"></div>
           <span>Cargando mapa...</span>
@@ -97,7 +101,7 @@
       @if (esModoSeleccion()) {
         <div class="map-instructions">
           <i class="fas fa-info-circle"></i>
-          <span>Arrastra el marcador para ajustar la ubicación</span>
+          <span>Haz clic en el mapa o arrastra el marcador para ajustar la ubicación</span>
         </div>
       }
     </div>

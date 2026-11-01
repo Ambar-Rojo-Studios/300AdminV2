@@ -26,6 +26,8 @@
   --accent-soft:       rgba(242, 50, 25, 0.10);
   --accent-soft-hover: rgba(242, 50, 25, 0.16);
   --accent-ring:       rgba(242, 50, 25, 0.35);
+  --action-bg:         #d92d20;
+  --action-hover:      #b42318;
 
   /* Superficies / fondos (base neutra slate) */
   --bg:            #eef2f7;
@@ -49,6 +51,10 @@
   --warning: #d97706; --warning-hover: #b45309; --warning-soft: rgba(217,119,6,0.14);  --warning-contrast: #ffffff;
   --danger:  #dc2626; --danger-hover:  #b91c1c; --danger-soft:  rgba(220,38,38,0.12);  --danger-contrast: #ffffff;
   --info:    #2563eb; --info-hover:    #1d4ed8; --info-soft:    rgba(37,99,235,0.12);   --info-contrast: #ffffff;
+  --success-text: #166534;
+  --warning-text: #92400e;
+  --danger-text: #b91c1c;
+  --info-text: #1d4ed8;
 
   /* Radios */
   --r-xs: 6px; --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 20px; --r-pill: 999px;
@@ -101,6 +107,10 @@
   --warning: #f59e0b; --warning-hover: #d97706; --warning-soft: rgba(245,158,11,0.16);
   --danger:  #ef4444; --danger-hover:  #f87171; --danger-soft:  rgba(239,68,68,0.16);
   --info:    #3b82f6; --info-hover:    #60a5fa; --info-soft:    rgba(59,130,246,0.16);
+  --success-text: #86efac;
+  --warning-text: #fcd34d;
+  --danger-text: #fca5a5;
+  --info-text: #93c5fd;
 
   --shadow-xs: 0 1px 2px rgba(0,0,0,0.40);
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.50);
@@ -128,6 +138,11 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 { line-height: 1.25; font-weight: 700; color: var(--text); }
+h1, h2, h3 { text-wrap: balance; }
+button, input, select, textarea { font: inherit; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+.eyebrow { display: inline-flex; align-items: center; gap: .5rem; font-size: .7rem; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: var(--text-secondary); }
+.eyebrow::before { content: ''; width: 1.25rem; height: 2px; background: var(--accent); border-radius: 2px; }
 
 a { color: var(--accent); text-decoration: none; }
 
@@ -272,11 +287,11 @@ a { color: var(--accent); text-decoration: none; }
 }
 
 .btn-primary {
-  background: var(--accent);
+  background: var(--action-bg);
   color: var(--accent-contrast);
-  box-shadow: var(--shadow-accent);
+  box-shadow: var(--shadow-xs);
 }
-.btn-primary:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); }
+.btn-primary:hover:not(:disabled) { background: var(--action-hover); transform: translateY(-1px); }
 .btn-primary:active:not(:disabled) { transform: translateY(0); background: var(--accent-active); }
 
 .btn-secondary {
@@ -441,6 +456,7 @@ tbody tr:hover td { background: var(--accent-soft); }
 .form-group textarea,
 input[type="text"], input[type="email"], input[type="password"],
 input[type="tel"], input[type="number"], input[type="date"], input[type="search"],
+input[type="time"], input[type="url"],
 select, textarea {
   width: 100%;
   padding: 11px 14px;
@@ -471,6 +487,9 @@ input.is-invalid, select.is-invalid, textarea.is-invalid {
 }
 
 .invalid-feedback { color: var(--danger); font-size: 0.78rem; margin-top: 6px; }
+input[type="file"] { max-width: 100%; font-size: .8rem; cursor: pointer; }
+input[type="file"]::file-selector-button { margin-right: .75rem; border: 0; border-radius: var(--r-xs); padding: .55rem .7rem; background: var(--surface-3); color: var(--text); font: inherit; font-weight: 600; cursor: pointer; }
+input[type="file"]:hover::file-selector-button { background: var(--accent-soft); }
 
 .form-group input[type="checkbox"] {
   width: 20px;
@@ -602,10 +621,10 @@ input.is-invalid, select.is-invalid, textarea.is-invalid {
   font-weight: 600;
   line-height: 1.4;
 }
-.badge-success { background: var(--success-soft); color: var(--success-hover); }
-.badge-danger  { background: var(--danger-soft);  color: var(--danger-hover); }
-.badge-warning { background: var(--warning-soft); color: var(--warning-hover); }
-.badge-info    { background: var(--info-soft);    color: var(--info-hover); }
+.badge-success { background: var(--success-soft); color: var(--success-text); }
+.badge-danger  { background: var(--danger-soft);  color: var(--danger-text); }
+.badge-warning { background: var(--warning-soft); color: var(--warning-text); }
+.badge-info    { background: var(--info-soft);    color: var(--info-text); }
 .badge-neutral { background: var(--surface-3);    color: var(--text-secondary); }
 
 /* --------------------------------------------------------------- SKELETONS */

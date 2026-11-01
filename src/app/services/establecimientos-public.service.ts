@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
-import { ApiResponseEstablecimiento, idEstablecimiento, EstablecimientoListDTO } from '../models/establecimiento.model';
+import { ApiResponseEstablecimiento, idEstablecimiento, EstablecimientoListDTO, EstablecimientoResponseDTO } from '../models/establecimiento.model';
 
 @Injectable({
   providedIn: 'root'
@@ -18,10 +18,11 @@ export class EstablecimientosPublicService {
    * No requiere autenticación
    */
   
-  obtenerEstablecimientosPublicos(pageNumber: number, pageSize: number): Observable<ApiResponseEstablecimiento<EstablecimientoListDTO[]>> {
+  obtenerEstablecimientosPublicos(pageNumber: number, pageSize: number, nombre = ''): Observable<ApiResponseEstablecimiento<EstablecimientoListDTO[]>> {
     const params = new HttpParams()
       .set('fldPageNumber', pageNumber.toString())
-      .set('fldPageSize', pageSize.toString());
+      .set('fldPageSize', pageSize.toString())
+      .set('fldNombre', nombre.trim());
 
     return this.http
       .get<ApiResponseEstablecimiento<EstablecimientoListDTO[]>>(this.baseApiUrl, { params })
@@ -37,6 +38,13 @@ export class EstablecimientosPublicService {
     return this.http
       .get<ApiResponseEstablecimiento<idEstablecimiento>>(this.idApiUrl, { params })
       .pipe(catchError(this.handleError));
+  }
+
+  filtrarPorEtiquetas(ids: number[], estricta: boolean): Observable<ApiResponseEstablecimiento<EstablecimientoResponseDTO[]>> {
+    const params = new HttpParams().set('fldEtiquetCsv', ids.join(',')).set('esBusquedaEstricta', estricta);
+    return this.http.get<ApiResponseEstablecimiento<EstablecimientoResponseDTO[]>>(
+      '/api/establecimientosPublic/filter-list', { params }
+    );
   }
 
   private handleError(error: HttpErrorResponse) {

@@ -1,67 +1,37 @@
-import { Component, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { createValideCode} from '../../model/validate-code.model';
-import { validateCodeServices} from '../../services/validate-code.services';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { FormsModule, NgForm } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { validateCodeServices } from '../../services/validate-code.services';
+import { RecoveryStateService } from '../../services/recovery-state.service';
 
 @Component({
-    selector: 'app-validate-code',
-    standalone: true,
-    imports: [CommonModule, FormsModule],
-    templateUrl: './validate-code.component.html',
-    styleUrls: ['./validate-code.component.css']
+  selector: 'app-validate-code', standalone: true, imports: [FormsModule, RouterLink],
+  templateUrl: './validate-code.component.html', styleUrl: '../recovery.css',
 })
-
-/**
- * Componente para validar el código de recuperación de contraseña enviado al correo.
- */
 export class ValidateCode {
-    email:string = '';  
-    code:string = '';
-    mensaje:string|null = null;
-    tipoMensaje: 'success' | 'error' = 'success';
-    isLoading: boolean = false;
+  readonly state = inject(RecoveryStateService);
+  private readonly service = inject(validateCodeServices);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+  readonly isLoading = signal(false);
+  readonly error = signal('');
+  email = this.state.email;
+  code = '';
 
-    constructor(
-        private validateCodeServices: validateCodeServices,
-        private cdr: ChangeDetectorRef
-    ){}
-
-    onValidatePassword(){
-        if (!this.email){
-            this.mostrarAlerta('Por favor, completa el correo electrónico.','error');
-            return;
-        }
-
-        this.isLoading = true;
-        this.mensaje = null;
-        this.cdr.detectChanges();
-
-        const payload : createValideCode = {
-            email: this.email,
-            code: this.code
-        }
-
-        this.validateCodeServices.crearForgotPassword(payload).subscribe({
-            next:(respuesta:string) => {
-                this.mostrarAlerta(respuesta,'success');
-                this.isLoading = false;
-            },
-            error:(err) => {
-                this.mostrarAlerta(err.mensaje, 'error');
-                this.isLoading = false
-            }
-        });
-    }
-
-    private mostrarAlerta (mensaje:string, tipo:'success' | 'error'):void{
-        this.mensaje = mensaje;
-        this.tipoMensaje = tipo;
-        setTimeout(()=>{
-            this.mensaje = null;
-            this.cdr.detectChanges();
-        },3000)    
-        this.cdr.detectChanges();
-    }
-
+  onValidatePassword(form: NgForm) {
+    if (this.isLoading() || form.invalid) { form.control.markAllAsTouched(); return; }
+    this.isLoading.set(true);
+    this.error.set('');
+    this.service.crearForgotPassword({ email: this.email.trim(), code: this.code.trim() }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (token) => {
+        this.isLoading.set(false);
+        if (!token.trim()) { this.error.set('No se pudo validar el código. Solicita uno nuevo.'); return; }
+        this.state.email = this.email.trim();
+        this.state.token.set(token.trim());
+        void this.router.navigate(['/reset-password']);
+      },
+      error: () => { this.isLoading.set(false); this.error.set('El código es incorrecto o ha vencido. Revísalo o solicita uno nuevo.'); }
+    });
+  }
 }

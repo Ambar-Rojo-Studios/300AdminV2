@@ -8,3 +8,10 @@ th.sortable-th {
   cursor: pointer;
   user-select: none;
 }
+
+.table-sort { display: inline-flex; align-items: center; gap: .4rem; border: 0; background: transparent; color: inherit; font: inherit; font-weight: inherit; padding: .4rem 0; cursor: pointer; }
+table { min-width: 640px; }
+td { overflow-wrap: normal; }
+.col-actions, .table-actions { position: sticky; right: 0; z-index: 1; background: var(--surface); box-shadow: -1px 0 0 var(--border); }
+.col-actions { background: var(--surface-2); }
+.table-actions { min-width: 112px; }

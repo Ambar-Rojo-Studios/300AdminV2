@@ -10,6 +10,12 @@
   </aside>
 
   <section class="form-section">
+    @if (registrado()) {
+      <div class="registro-exito" role="status">
+        <h1>Tu cuenta está lista</h1><p>Ya puedes iniciar sesión y descubrir lugares.</p>
+        <a class="btn-primary" routerLink="/login/cliente">Iniciar sesión</a>
+      </div>
+    } @else {
     <form [formGroup]="clienteForm" (ngSubmit)="enviarCliente()" novalidate>
 
       <header class="login-logo">
@@ -34,13 +40,6 @@
           @if (clienteForm.get('fldNombreCorto')?.touched && clienteForm.get('fldNombreCorto')?.hasError('required')) {
             <span class="error">El nombre corto es obligatorio.</span>
           }
-        </div>
-
-        <div class="form-group">
-          <label class="static-label">Suscripción Asignada</label>
-          <div class="suscripcion-info">
-            <span>Suscripción por defecto (ID: 1)</span>
-          </div>
         </div>
 
         <div class="form-group floating-label">
@@ -72,8 +71,11 @@
         </div>
 
         <div class="form-group floating-label">
-          <input id="crearContrasenia" formControlName="fldContrasenia" type="password" required placeholder=" " autocomplete="new-password" />
+          <input id="crearContrasenia" formControlName="fldContrasenia" [type]="mostrarPassword() ? 'text' : 'password'" required placeholder=" " autocomplete="new-password" />
           <label for="crearContrasenia">Contraseña *</label>
+          <small>Usa al menos 8 caracteres.</small>
+          <button type="button" class="password-toggle" [attr.aria-pressed]="mostrarPassword()" (click)="mostrarPassword.set(!mostrarPassword())">{{ mostrarPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña' }}</button>
+          @if (clienteForm.get('fldContrasenia')?.touched && clienteForm.get('fldContrasenia')?.hasError('minlength')) { <span class="error">Usa al menos 8 caracteres.</span> }
           @if (clienteForm.get('fldContrasenia')?.touched && clienteForm.get('fldContrasenia')?.hasError('required')) {
             <span class="error">La contraseña es obligatoria.</span>
           }
@@ -93,11 +95,13 @@
       </div>
 
       <footer class="form-actions">
-        <button type="submit"  [disabled]="cargando()" class="btn-submit" [disabled]="clienteForm.invalid">
-          Registrar Cliente
+        <button type="submit"  class="btn-submit" [disabled]="cargando() || clienteForm.invalid" [attr.aria-busy]="cargando()">
+          {{ cargando() ? 'Creando cuenta…' : 'Crear cuenta' }}
         </button>
       </footer>
 
+      <p class="registro-login">¿Ya tienes cuenta? <a routerLink="/login/cliente">Inicia sesión</a></p>
     </form>
+    }
   </section>
 </main>

@@ -1,0 +1,12 @@
+
+:host { display: block; }
+.recovery { min-height: 100dvh; display: grid; place-items: center; padding: 1.25rem; }
+.recovery__card { width: 100%; max-width: 460px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: clamp(1.25rem, 4vw, 2rem); box-shadow: var(--shadow-md); }
+.recovery__card h1 { font-size: 1.6rem; margin: .5rem 0 1rem; }
+.recovery__card p { color: var(--text-secondary); margin-bottom: 1rem; }
+.recovery__card form, .recovery__field { display: grid; gap: .6rem; }
+.recovery__card form { gap: 1rem; }
+.recovery__card input { width: 100%; min-height: 44px; }
+.recovery__card button { min-height: 44px; }
+.recovery__links { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
+.recovery__error { color: var(--danger) !important; }

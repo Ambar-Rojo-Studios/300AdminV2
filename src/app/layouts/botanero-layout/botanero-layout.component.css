@@ -1,0 +1,13 @@
+.botanero-header { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: center; padding: 1rem max(1.5rem, calc((100vw - 1160px) / 2)); background: var(--surface); border-bottom: 1px solid var(--border); }
+.brand { display: inline-flex; align-items: center; gap: .75rem; color: var(--text); font-weight: 700; line-height: 1.3; }
+.brand-mark { background: var(--accent); color: #fff; font-size: 1.2rem; letter-spacing: -.06em; border-radius: var(--r-md); padding: .65rem .55rem; }
+.brand small { display: block; color: var(--text-muted); font-size: .72rem; font-weight: 400; margin-top: .25rem; }
+.botanero-nav { display: flex; flex-wrap: wrap; align-items: center; gap: .65rem; font-size: .85rem; }
+.panel-link, .site-link { display: inline-flex; align-items: center; gap: .5rem; padding: .65rem .85rem; border-radius: var(--r-sm); }
+.panel-link { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.site-link { color: var(--text-secondary); }
+.site-link:hover { background: var(--surface-3); color: var(--text); }
+.theme-toggle { width: 40px; height: 40px; padding: 0; }
+.logout { min-height: 40px; }
+.botanero-content { padding: 2.5rem 1.5rem 4rem; max-width: 1208px; margin: auto; }
+@media (max-width: 620px) { .botanero-header { padding: 1rem; gap: 1rem; } .brand { width: 100%; } .botanero-nav { width: 100%; gap: .4rem; } .panel-link, .site-link { padding: .6rem; } .logout { margin-left: auto; padding: .6rem; } .logout span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } .botanero-content { padding: 1.75rem 1rem 3rem; } }

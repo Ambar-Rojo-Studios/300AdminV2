@@ -1,38 +1,12 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse, HttpHeaders, HttpBackend } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { createForgotPassword } from '../model/forgot-password.model';
 
-@Injectable({
-  providedIn: 'root'
-})
-
-/**
- * Servicio para solicitar el proceso de recuperación de contraseña.
- */
+@Injectable({ providedIn: 'root' })
 export class ForgotPasswordService {
-  private httpSinInterceptor: HttpClient;
-  private readonly forgotPasswordUrl = 'api/password-reset/forgot-password';
+  private readonly http = inject(HttpClient);
 
-  constructor(handler: HttpBackend) {
-    this.httpSinInterceptor = new HttpClient(handler);
-  }
-
-  crearForgotPassword(payload: createForgotPassword): Observable<string> {
-    return this.httpSinInterceptor.post(this.forgotPasswordUrl, payload, {
-      headers: new HttpHeaders({ 'Content-Type': 'application/json' }),
-      responseType: 'text'
-    }).pipe(
-      catchError(this.handleError)
-    );
-  }
-
-  private handleError(error: HttpErrorResponse): Observable<never> {
-    const message =
-      (error.error && (error.error.mensaje || error.error.message)) ||
-      error.statusText ||
-      'Error desconocido del servidor';
-    return throwError(() => new Error(message));
+  crearForgotPassword(payload: createForgotPassword) {
+    return this.http.post('/api/password-reset/forgot-password', payload, { responseType: 'text' });
   }
 }

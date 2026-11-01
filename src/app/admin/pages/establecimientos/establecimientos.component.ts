@@ -1,6 +1,8 @@
+import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, signal, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { lastValueFrom } from 'rxjs';
 
 import { EstablecimientosService } from '../../../services/establecimientos.service';
@@ -27,6 +29,7 @@ import {
   EstablecimientoFormSubmitEvent,
   EstablecimientoFormValue,
 } from '../../../shared/models/establecimiento-form.model';
+import { cargarListadoCompleto } from '../../../utils/cargar-listado-completo';
 import { imagenesAConservar } from '../../../utils/imagenes-conservadas';
 
 /**
@@ -44,8 +47,9 @@ import { imagenesAConservar } from '../../../utils/imagenes-conservadas';
 @Component({
   selector: 'app-establecimientos',
   standalone: true,
-  imports: [CommonModule, DataTableComponent, ModalComponent, ConfirmDialogComponent, EstablecimientoFormComponent],
+  imports: [CommonModule, FormsModule, DataTableComponent, ModalComponent, ConfirmDialogComponent, EstablecimientoFormComponent],
   templateUrl: './establecimientos.component.html',
+  styleUrl: './establecimientos.component.css',
 })
 export class EstablecimientosComponent implements OnInit {
   establecimientos = signal<EstablecimientoListDTO[]>([]);
@@ -59,11 +63,34 @@ export class EstablecimientosComponent implements OnInit {
 
   showFormModal = signal(false);
   showDeleteModal = signal(false);
+  readonly formDirty = signal(false);
+  readonly loadingEdicion = signal(false);
+  readonly errorEdicion = signal('');
+  readonly editTarget = signal<EstablecimientoListDTO | null>(null);
+  private editingOriginal: EstablecimientoListDTO | null = null;
+  private editRequestId = 0;
+  private readonly route = inject(ActivatedRoute, { optional: true });
   modalMode = signal<'create' | 'edit'>('create');
 
   currentPage = signal(1); // 1-indexado, como espera <app-data-table>
   pageSize = 10;
-  totalPages = signal(1);
+  readonly filtroNombre = signal('');
+  readonly filtroCiudad = signal('');
+  readonly filtroEmpresa = signal('');
+  readonly filtroTipo = signal('');
+  readonly errorListado = signal('');
+  readonly ciudades = computed(() => [...new Set(this.establecimientos().map(est => est.fldCiudad).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es')));
+  readonly establecimientosFiltrados = computed(() => {
+    const nombre = this.filtroNombre().trim().toLocaleLowerCase('es');
+    return this.establecimientos().filter(est =>
+      (!nombre || est.fldNombre.toLocaleLowerCase('es').includes(nombre)) &&
+      (!this.filtroCiudad() || est.fldCiudad === this.filtroCiudad()) &&
+      (!this.filtroEmpresa() || String(est.fkIdEmpresa) === this.filtroEmpresa()) &&
+      (!this.filtroTipo() || String(est.fkIdTipoEstablecimiento) === this.filtroTipo())
+    );
+  });
+  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.establecimientosFiltrados().length / this.pageSize)));
+  readonly paginaActual = computed(() => this.establecimientosOrdenados().slice((this.currentPage() - 1) * this.pageSize, this.currentPage() * this.pageSize));
 
   sortKey = signal<string | null>(null);
   sortDirection = signal<SortDirection>(null);
@@ -95,7 +122,7 @@ export class EstablecimientosComponent implements OnInit {
   establecimientosOrdenados = computed<EstablecimientoListDTO[]>(() => {
     const key = this.sortKey();
     const direction = this.sortDirection();
-    const lista = this.establecimientos();
+    const lista = this.establecimientosFiltrados();
     if (!key || !direction) return lista;
 
     const copia = [...lista];
@@ -121,6 +148,9 @@ export class EstablecimientosComponent implements OnInit {
     try {
       await Promise.all([this.cargarEmpresas(), this.cargarSuscripciones(), this.cargarTiposEstablecimiento()]);
       await this.cargarEstablecimientos();
+      const editId = Number(this.route?.snapshot.queryParamMap.get('editar'));
+      const seleccionado = this.establecimientos().find(est => est.idEstablecimiento === editId);
+      if (seleccionado) await this.abrirModalEditar(seleccionado);
     } catch (err) {
       this.toastService.showError('Error al inicializar la página de establecimientos.');
       console.error('Error en ngOnInit:', err);
@@ -129,37 +159,34 @@ export class EstablecimientosComponent implements OnInit {
     }
   }
 
-  private async cargarEstablecimientos(): Promise<void> {
+  async cargarEstablecimientos(): Promise<void> {
     this.isLoading.set(true);
+    this.errorListado.set('');
     try {
-      const response = await lastValueFrom(
-        this.establecimientosService.obtenerEstablecimientos(this.currentPage(), this.pageSize)
-      );
-      if (response?.codigoEstatus === 1 && Array.isArray(response.cuerpoDeRespuesta)) {
-        const lista = response.cuerpoDeRespuesta;
-        this.establecimientos.set(lista);
-        this.totalPages.set(lista.length < this.pageSize ? this.currentPage() : this.currentPage() + 1);
-      } else {
-        this.establecimientos.set([]);
-        this.totalPages.set(1);
-        this.toastService.showError(response?.mensaje || 'Error al cargar establecimientos.');
-      }
-    } catch (err: any) {
+      const lista = await cargarListadoCompleto((pagina, tamano) => this.establecimientosService.obtenerEstablecimientos(pagina, tamano));
+      this.establecimientos.set(lista);
+      this.currentPage.set(Math.min(this.currentPage(), this.totalPages()));
+    } catch {
       this.establecimientos.set([]);
-      this.totalPages.set(1);
-      this.toastService.showError(`Error al cargar establecimientos: ${err.message || 'Error de conexión'}`);
+      this.currentPage.set(1);
+      this.errorListado.set('No se pudo cargar el catálogo completo. Intenta de nuevo.');
     } finally {
       this.isLoading.set(false);
     }
   }
 
+  limpiarFiltros() {
+    this.filtroNombre.set(''); this.filtroCiudad.set(''); this.filtroEmpresa.set(''); this.filtroTipo.set('');
+    this.currentPage.set(1);
+  }
+
   private async cargarEmpresas(): Promise<void> {
     try {
-      const response = await lastValueFrom(this.empresasService.obtenerEmpresas(1, 100));
-      this.empresas.set(response?.codigoEstatus === 1 && Array.isArray(response.cuerpoDeRespuesta) ? response.cuerpoDeRespuesta : []);
+      const empresas = await cargarListadoCompleto((pagina, tamano) => this.empresasService.obtenerEmpresas(pagina, tamano));
+      this.empresas.set(empresas);
     } catch (err) {
       this.empresas.set([]);
-      console.error('Error al cargar empresas:', err);
+      this.toastService.showError('No se cargó el catálogo de empresas. Actualiza la página para reintentar.');
     }
   }
 
@@ -172,19 +199,17 @@ export class EstablecimientosComponent implements OnInit {
       this.suscripciones.set([...(clientes?.cuerpoDeRespuesta || []), ...(noClientes?.cuerpoDeRespuesta || [])]);
     } catch (err) {
       this.suscripciones.set([]);
-      console.error('Error al cargar suscripciones:', err);
+      this.toastService.showError('No se cargaron las suscripciones. Actualiza la página para reintentar.');
     }
   }
 
   private async cargarTiposEstablecimiento(): Promise<void> {
     try {
-      const response = await lastValueFrom(this.tiposEstablecimientoService.obtenerTipos(1, 100));
-      this.tiposEstablecimiento.set(
-        response?.codigoEstatus === 1 && Array.isArray(response.cuerpoDeRespuesta) ? response.cuerpoDeRespuesta : []
-      );
+      const tipos = await cargarListadoCompleto((pagina, tamano) => this.tiposEstablecimientoService.obtenerTipos(pagina, tamano));
+      this.tiposEstablecimiento.set(tipos);
     } catch (err) {
       this.tiposEstablecimiento.set([]);
-      console.error('Error al cargar tipos de establecimiento:', err);
+      this.toastService.showError('No se cargaron los tipos de establecimiento. Actualiza la página para reintentar.');
     }
   }
 
@@ -200,67 +225,85 @@ export class EstablecimientosComponent implements OnInit {
 
   onPageChange(page: number): void {
     this.currentPage.set(page);
-    this.cargarEstablecimientos();
   }
 
   onSortChange(evento: SortEvent): void {
     this.sortKey.set(evento.direction ? evento.key : null);
     this.sortDirection.set(evento.direction);
+    this.currentPage.set(1);
   }
 
   abrirModalCrear(): void {
+    this.editRequestId++;
+    this.loadingEdicion.set(false); this.errorEdicion.set(''); this.formDirty.set(false);
+    this.editingOriginal = null;
     this.modalMode.set('create');
     this.formValue.set(null); // <app-establecimiento-form> arranca vacío cuando value es null
     this.showFormModal.set(true);
   }
 
-  abrirModalEditar(est: EstablecimientoListDTO): void {
-    this.modalMode.set('edit');
-    this.formValue.set({
-      idEstablecimiento: est.idEstablecimiento,
-      fkIdEmpresa: est.fkIdEmpresa,
-      fkIdSuscripcion: est.fkIdSuscripcion,
-      fkIdTipoEstablecimiento: est.fkIdTipoEstablecimiento,
+  async abrirModalEditar(base: EstablecimientoListDTO): Promise<void> {
+    const requestId = ++this.editRequestId;
+    this.editTarget.set(base); this.formDirty.set(false); this.errorEdicion.set('');
+    this.formValue.set(null); this.editingOriginal = null;
+    this.loadingEdicion.set(true); this.showFormModal.set(true); this.modalMode.set('edit');
+    try {
+      const res = await lastValueFrom(this.establecimientosService.obtenerIdPorEstablecimiento(base.idEstablecimiento));
+      if (requestId !== this.editRequestId || !this.showFormModal()) return;
+      if (res?.codigoEstatus !== 1 || !res.cuerpoDeRespuesta) throw new Error('Datos incompletos');
+      const est = { ...base, ...res.cuerpoDeRespuesta } as EstablecimientoListDTO;
+      this.editingOriginal = est;
+      this.formValue.set({
+        idEstablecimiento: est.idEstablecimiento,
+        fkIdEmpresa: est.fkIdEmpresa,
+        fkIdSuscripcion: est.fkIdSuscripcion,
+        fkIdTipoEstablecimiento: est.fkIdTipoEstablecimiento,
 
-      fldNombre: est.fldNombre,
-      fldDescripcion: est.fldDescripcion,
+        fldNombre: est.fldNombre,
+        fldDescripcion: est.fldDescripcion,
 
-      fldEstado: est.fldEstado,
-      fldCiudad: est.fldCiudad,
-      fldDireccion: est.fldDireccion,
-      fldReferenciaGeografica: est.fldReferenciaGeografica,
-      fldCoordLatitud: est.fldCoordLatitud ?? '',
-      fldCoordLongitud: est.fldCoordLongitud ?? '',
+        fldEstado: est.fldEstado,
+        fldCiudad: est.fldCiudad,
+        fldDireccion: est.fldDireccion,
+        fldReferenciaGeografica: est.fldReferenciaGeografica,
+        fldCoordLatitud: est.fldCoordLatitud ?? '',
+        fldCoordLongitud: est.fldCoordLongitud ?? '',
 
-      fldCorreoElectronico: est.fldCorreoElectronico,
-      fldSugerenciaDeLaCasa: est.fldSugerenciaDeLaCasa,
+        fldCorreoElectronico: est.fldCorreoElectronico,
+        fldSugerenciaDeLaCasa: est.fldSugerenciaDeLaCasa,
 
-      fldHorarioApertura: est.fldHorarioApertura?.substring(0, 5) ?? '00:00',
-      fldHorarioCierre: est.fldHorarioCierre?.substring(0, 5) ?? '00:00',
+        fldHorarioApertura: est.fldHorarioApertura?.substring(0, 5) ?? '00:00',
+        fldHorarioCierre: est.fldHorarioCierre?.substring(0, 5) ?? '00:00',
 
-      fldLunes: !!est.fldLunes,
-      fldMartes: !!est.fldMartes,
-      fldMiercoles: !!est.fldMiercoles,
-      fldJueves: !!est.fldJueves,
-      fldViernes: !!est.fldViernes,
-      fldSabado: !!est.fldSabado,
-      fldDomingo: !!est.fldDomingo,
+        fldLunes: !!est.fldLunes,
+        fldMartes: !!est.fldMartes,
+        fldMiercoles: !!est.fldMiercoles,
+        fldJueves: !!est.fldJueves,
+        fldViernes: !!est.fldViernes,
+        fldSabado: !!est.fldSabado,
+        fldDomingo: !!est.fldDomingo,
 
-      fldCelular1: est.fldCelular1,
-      fldCelular2: est.fldCelular2,
-      fldCelularComentarios: est.fldCelularComentarios,
+        fldCelular1: est.fldCelular1,
+        fldCelular2: est.fldCelular2,
+        fldCelularComentarios: est.fldCelularComentarios,
 
-      fldAlimentosBebidas: est.fldAlimentosBebidas,
-      fldTicketPromedio: est.fldTicketPromedio,
-      fldAntiguedadAnios: est.fldAntiguedadAnios,
+        fldAlimentosBebidas: est.fldAlimentosBebidas,
+        fldTicketPromedio: est.fldTicketPromedio,
+        fldAntiguedadAnios: est.fldAntiguedadAnios,
 
-      fldImgRefs: est.imagenesPerfil?.[0] ?? est.fldImgRefs,
-      fldImgRefs2: est.imagenesPerfil?.[1] ?? est.fldImgRefs2,
-      fldImgRefs3: est.imagenesPerfil?.[2] ?? est.fldImgRefs3,
-      fldImgRefs4: est.imagenesPerfil?.[3] ?? est.fldImgRefs4,
-      fldMenu: est.imagenesMenu?.[0] ?? est.fldMenu,
-    });
-    this.showFormModal.set(true);
+        fldImgRefs: est.imagenesPerfil?.[0] ?? est.fldImgRefs,
+        fldImgRefs2: est.imagenesPerfil?.[1] ?? est.fldImgRefs2,
+        fldImgRefs3: est.imagenesPerfil?.[2] ?? est.fldImgRefs3,
+        fldImgRefs4: est.imagenesPerfil?.[3] ?? est.fldImgRefs4,
+        fldMenu: est.imagenesMenu?.[0] ?? est.fldMenu,
+        imagenesPerfil: est.imagenesPerfil, imagenesMenu: est.imagenesMenu,
+      fldImgRefs5: est.imagenesPerfil?.[4] ?? null, fldMenu2: est.imagenesMenu?.[1] ?? null,
+      });
+    } catch {
+      if (requestId === this.editRequestId) this.errorEdicion.set('No pudimos cargar la ficha completa. Reintenta antes de editar.');
+    } finally {
+      if (requestId === this.editRequestId) this.loadingEdicion.set(false);
+    }
   }
 
   abrirModalEliminar(est: EstablecimientoListDTO): void {
@@ -269,6 +312,8 @@ export class EstablecimientosComponent implements OnInit {
   }
 
   cerrarModalFormulario(): void {
+    if (this.isSaving()) return;
+    this.editRequestId++; this.loadingEdicion.set(false); this.formDirty.set(false);
     this.showFormModal.set(false);
     this.formValue.set(null);
   }
@@ -286,6 +331,7 @@ export class EstablecimientosComponent implements OnInit {
   }
 
   async onEstablecimientoSubmit(event: EstablecimientoFormSubmitEvent): Promise<void> {
+    if (this.isSaving()) return;
     const { values, files } = event;
     this.isSaving.set(true);
 
@@ -361,7 +407,9 @@ export class EstablecimientosComponent implements OnInit {
             files.menu || undefined,
             files.foto2 || undefined,
             files.foto3 || undefined,
-            files.foto4 || undefined
+            files.foto4 || undefined,
+            files.foto5 || undefined,
+            files.menu2 || undefined
           )
         );
 
@@ -369,12 +417,12 @@ export class EstablecimientosComponent implements OnInit {
           this.toastService.showSuccess('Establecimiento creado correctamente.');
           this.currentPage.set(1);
           await this.cargarEstablecimientos();
-          this.cerrarModalFormulario();
+          this.isSaving.set(false); this.cerrarModalFormulario();
         } else {
           this.toastService.showError(res?.mensaje || 'Error al crear establecimiento.');
         }
       } else {
-        const original = this.establecimientos().find((e) => e.idEstablecimiento === values.idEstablecimiento);
+        const original = this.editingOriginal;
         if (!original) {
           this.toastService.showError('No se encontró el establecimiento a editar.');
           return;
@@ -446,14 +494,16 @@ export class EstablecimientosComponent implements OnInit {
             files.menu || undefined,
             files.foto2 || undefined,
             files.foto3 || undefined,
-            files.foto4 || undefined
+            files.foto4 || undefined,
+            files.foto5 || undefined,
+            files.menu2 || undefined
           )
         );
 
         if (res?.codigoEstatus === 1) {
           this.toastService.showSuccess('Establecimiento actualizado correctamente.');
           await this.cargarEstablecimientos();
-          this.cerrarModalFormulario();
+          this.isSaving.set(false); this.cerrarModalFormulario();
         } else {
           this.toastService.showError(res?.mensaje || 'Error al actualizar establecimiento.');
         }

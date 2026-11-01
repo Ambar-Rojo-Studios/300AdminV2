@@ -11,7 +11,7 @@ export const createRoleGuard = (allowedRoles: string[]): CanActivateFn => {
     const router = inject(Router);
 
     if (!authService.estaAutenticado()) {
-      const redirectUrl = state.url.startsWith('/admin') ? '/login/usuario' : '/login/cliente';
+      const redirectUrl = (state.url.startsWith('/admin') || state.url.startsWith('/mi-lugar')) ? '/login/usuario' : '/login/cliente';
       router.navigate([redirectUrl], { queryParams: { returnUrl: state.url } });
       return false;
     }

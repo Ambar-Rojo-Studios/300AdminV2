@@ -64,7 +64,7 @@ export class LoginAccesoClienteComponent implements OnInit, OnDestroy {
         this.mensajeExito.set('Inicio de sesión exitoso.');
         const userRole = this.authService.obtenerRol();
         if (userRole === 'cliente') {
-          this.router.navigate(['/inicio']);
+          this.router.navigate(['/']);
         } else {
           this.router.navigate(['/unauthorized']);
         }

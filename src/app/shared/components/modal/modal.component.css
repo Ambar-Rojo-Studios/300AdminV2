@@ -1,0 +1,7 @@
+.modal-content { display: flex; flex-direction: column; overflow: hidden; max-height: 90dvh; }
+.modal-header, .modal-footer { flex-shrink: 0; }
+.modal-body { overflow-y: auto; min-height: 0; }
+.discard-prompt { position: sticky; top: 0; z-index: 2; padding: 1rem; background: var(--surface); border: 1px solid var(--warning); border-radius: var(--r-sm); margin-bottom: 1rem; }
+.discard-prompt p { margin-bottom: .75rem; }
+.discard-prompt button { margin: 0 .5rem .5rem 0; }
+@media (max-width: 620px) { .modal-header, .modal-body, .modal-footer { padding: 1rem; } .modal-footer { flex-wrap: wrap; } }

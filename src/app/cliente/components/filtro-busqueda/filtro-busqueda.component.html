@@ -1,43 +1,35 @@
 <div class="buscador-container" role="search">
   <div class="buscador__input-wrap">
-    <input
-      type="text"
-      class="buscador__input"
-      placeholder="Busca por nombre del lugar..."
-      [(ngModel)]="searchText"
-      (ngModelChange)="onSearchChange($event)"
-      (focus)="onInputFocus()"
-      (blur)="onInputBlur()"
-      name="search"
-      autocomplete="off"
-      role="combobox"
-      aria-label="Buscar establecimiento"
-      aria-autocomplete="list"
-      [attr.aria-expanded]="mostrarResultados ? 'true' : 'false'"
-    />
+    <input type="search" class="buscador__input" placeholder="Busca por nombre del lugar…"
+      [id]="inputId" [ngModel]="searchText" (ngModelChange)="onSearchChange($event)"
+      (focus)="onInputFocus()" (keydown)="onKeydown($event)" name="search" autocomplete="off"
+      [attr.role]="mostrarSugerencias ? 'combobox' : 'searchbox'" aria-label="Buscar establecimiento"
+      [attr.aria-autocomplete]="mostrarSugerencias ? 'list' : null"
+      [attr.aria-expanded]="mostrarSugerencias ? mostrarResultados : null"
+      [attr.aria-controls]="mostrarResultados && resultados.length ? inputId + '-resultados' : null"
+      [attr.aria-activedescendant]="mostrarResultados && indiceActivo >= 0 ? inputId + '-opcion-' + indiceActivo : null" />
     <i class="fa-solid fa-magnifying-glass buscador__icon" aria-hidden="true"></i>
   </div>
-
-  @if (mostrarResultados && resultados.length > 0) {
-    <div
-      class="buscador__dropdown"
-      role="listbox"
-      aria-label="Resultados de búsqueda"
-      (mouseenter)="onDropdownEnter()"
-      (mouseleave)="onDropdownLeave()"
-    >
-      @for (est of resultados; track trackById($index, est)) {
-        <button
-          type="button"
-          class="buscador__resultado"
-          role="option"
-          (mousedown)="$event.preventDefault(); seleccionar(est)"
-        >
-          <strong>{{ est.fldNombre }}</strong>
-          @if (est.fldDireccion) {
-            <span class="buscador__resultado-direccion">{{ est.fldDireccion }}</span>
+  @if (mostrarResultados) {
+    <div class="buscador__dropdown">
+      @if (cargando) {
+        <p class="buscador__estado" role="status">Buscando lugares…</p>
+      } @else if (error) {
+        <p class="buscador__estado" role="alert">{{ error }}</p>
+        <button type="button" class="btn-secondary" (click)="onSearchChange(searchText)">Reintentar</button>
+      } @else if (resultados.length === 0) {
+        <p class="buscador__estado" role="status">No encontramos lugares con ese nombre.</p>
+      } @else {
+        <div role="listbox" [id]="inputId + '-resultados'" aria-label="Resultados de búsqueda">
+          @for (est of resultados; track est.idEstablecimiento; let i = $index) {
+            <button type="button" class="buscador__resultado" role="option" tabindex="-1"
+              [id]="inputId + '-opcion-' + i" [attr.aria-selected]="i === indiceActivo"
+              (pointerdown)="$event.preventDefault()" (click)="seleccionar(est)">
+              <strong>{{ est.fldNombre }}</strong>
+              @if (est.fldDireccion) { <span class="buscador__resultado-direccion">{{ est.fldDireccion }}</span> }
+            </button>
           }
-        </button>
+        </div>
       }
     </div>
   }

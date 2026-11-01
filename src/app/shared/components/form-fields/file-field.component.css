@@ -1,0 +1,11 @@
+.file-field { display: grid; grid-template-columns: 72px minmax(0, 1fr); align-content: start; align-items: start; gap: .5rem .75rem; padding: 1rem; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface-2); }
+.file-field > label { grid-column: 1 / -1; margin: 0 0 .25rem; }
+.file-preview { grid-column: 1; grid-row: 2 / span 3; width: 72px; height: 72px; object-fit: cover; border: 1px solid var(--border); border-radius: var(--r-sm); }
+.file-preview--empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .35rem; background: var(--surface-3); color: var(--text-muted); font-size: .6rem; }
+.file-preview--empty i { font-size: 1.25rem; }
+.file-field input { grid-column: 2; min-width: 0; padding: .35rem; font-size: 0; }
+.file-field input::file-selector-button { width: 100%; padding: .65rem .45rem; margin: 0; font-size: .72rem; }
+.file-selection, .file-hint, .invalid-feedback { grid-column: 2; font-size: .72rem; overflow-wrap: anywhere; }
+.file-selection { color: var(--text-secondary); }
+.file-selection button { display: block; font-size: .7rem; padding: .4rem .5rem; margin-top: .4rem; white-space: normal; }
+.file-hint { color: var(--text-muted); }

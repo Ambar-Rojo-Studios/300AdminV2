@@ -8,6 +8,7 @@ import {
   signal,
   effect,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -27,7 +28,7 @@ import {
 @Component({
   selector: 'app-comentarios-cliente',
   standalone: true,
-  imports: [CommonModule, FormsModule, ClienteEstrellaComponent],
+  imports: [CommonModule, FormsModule, RouterLink, ClienteEstrellaComponent],
   templateUrl: './comentarios-cliente.component.html',
   styleUrls: ['./comentarios-cliente.component.css'],
 })
@@ -57,8 +58,11 @@ export class ComentariosClienteComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.idClienteAutenticado.set(this.authService.getId());
+    this.idClienteAutenticado.set(this.authService.estaClienteLogueado() && this.authService.estaAutenticado()
+      ? this.authService.getId() : null);
   }
+
+  sesionIniciada(): boolean { return this.authService.estaAutenticado(); }
 
   async cargarComentariosPublicos(): Promise<void> {
     const id = this.establecimientoId();

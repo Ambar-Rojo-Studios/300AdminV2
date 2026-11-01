@@ -64,7 +64,7 @@ export class AuthService {
           this.updateAuthState();
           const userRole = this.obtenerRol();
           if (userRole === 'cliente') {
-            this.router.navigate(['/inicio']);
+            this.router.navigate(['/']);
           } else {
             this.router.navigate(['/unauthorized']);
           }
@@ -122,7 +122,7 @@ export class AuthService {
     }
   }
 
-  cerrarSesion(rutaRedireccion: string = '/inicio'): void {
+  cerrarSesion(rutaRedireccion: string = '/'): void {
     try {
       localStorage.removeItem(this.CLAVE_TOKEN);
       const loggedOutState: AuthState = {
@@ -248,7 +248,7 @@ export class AuthService {
   }
 
   logoutCliente(): void {
-    this.cerrarSesion('/inicio');
+    this.cerrarSesion('/');
   }
 
   logoutUsuario(): void {

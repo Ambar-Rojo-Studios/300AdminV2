@@ -3,23 +3,27 @@
 @if (cargando()) {
   <app-loading-spinner />
 } @else if (error()) {
-  <p class="error">{{ error() }}</p>
+  <p class="error" role="alert">{{ error() }}</p><button type="button" class="btn-secondary" (click)="cargarVista()">Reintentar</button>
 } @else if (lugar(); as l) {
   <header class="detalle-header">
-    <h1>{{ l.fldNombre }}</h1>
-    <p>{{ l.fldDireccion }}, {{ l.fldCiudad }}</p>
+    @if (l.imagenesPerfil?.length) { <img [src]="l.imagenesPerfil[0]" alt="" /> }
+    <div><span class="eyebrow">Tu establecimiento</span><h1>{{ l.fldNombre }}</h1>
+    <p><i class="fas fa-location-dot" aria-hidden="true"></i> {{ l.fldDireccion }}, {{ l.fldCiudad }}</p></div>
   </header>
 
   <div class="acciones">
-    <button type="button" (click)="abrirModalEditar()">Editar información</button>
-    <button type="button" (click)="abrirModalPromos()">Editar promos</button>
+    <button type="button" class="btn-primary" (click)="abrirModalEditar()">Editar información</button>
+    <button type="button" class="btn-secondary" (click)="abrirModalPromos()">Editar promociones</button>
+    <a class="btn-secondary" [routerLink]="['/detalleEstablecimiento', l.idEstablecimiento]" target="_blank" rel="noopener">Ver ficha pública</a>
   </div>
 
   <section>
     <h2>Estadísticas</h2>
-    @if (stats(); as s) {
+    @if (statsLoading()) { <p role="status">Cargando estadísticas…</p> }
+    @else if (statsError()) { <p role="alert">{{ statsError() }}</p><button type="button" class="btn-secondary" (click)="cargarStats()">Reintentar estadísticas</button> }
+    @else if (stats(); as s) {
       <dl class="stats">
-        <div><dt>Calificación</dt><dd>{{ s.calificacionPromedio }}</dd></div>
+        <div><dt>Calificación</dt><dd>{{ s.calificacionPromedio > 0 ? (s.calificacionPromedio | number:'1.1-1') + ' / 5' : 'Sin calificaciones' }}</dd></div>
         <div><dt>Comentarios</dt><dd>{{ s.totalComentarios }}</dd></div>
         <div><dt>Canjes</dt><dd>{{ s.totalCanjes }}</dd></div>
       </dl>
@@ -32,12 +36,12 @@
     <h2>Promociones</h2>
     <dl class="promos">
       @for (dia of diasPromo; track dia.key) {
-        <div>
+        <div [class.sin-promo]="!l[dia.key]">
           <dt>{{ dia.label }}</dt>
           <dd>{{ l[dia.key] || '—' }}</dd>
         </div>
       }
-      <div>
+      <div class="promo-exclusiva">
         <dt>Promo 300 Lugares</dt>
         <dd>{{ l.fldPromo300Lugares || '—' }}</dd>
       </div>
@@ -46,7 +50,9 @@
 
   <section>
     <h2>Comentarios de clientes</h2>
-    @if (comentarios().length === 0) {
+    @if (comentariosLoading()) { <p role="status">Cargando comentarios…</p> }
+    @else if (comentariosError()) { <p role="alert">{{ comentariosError() }}</p><button type="button" class="btn-secondary" (click)="cargarComentarios()">Reintentar comentarios</button> }
+    @else if (comentarios().length === 0) {
       <p class="pendiente">Aún no hay comentarios.</p>
     } @else {
       <ul class="comentarios">
@@ -60,26 +66,30 @@
     }
   </section>
 
-  <app-modal [open]="showFormModal()" title="Editar información" size="lg" (closed)="cerrarModalEditar()">
+  <section><h2>Etiquetas de tu ficha</h2><p>La administración gestiona estas etiquetas.</p><app-etiquetas-listado-public [establecimientoId]="l.idEstablecimiento" /></section>
+  <app-modal #editorModal [busy]="guardando()" [confirmDiscard]="formDirty()" [open]="showFormModal()" title="Editar información" size="lg" (closed)="cerrarModalEditar()">
+    @if (showFormModal()) {
     <app-establecimiento-form
       mode="botanero"
       formId="establecimientoFormBotanero"
       [value]="formValue()"
       [saving]="guardando()"
+      (dirtyChange)="formDirty.set($event)"
       (formSubmit)="onEstablecimientoSubmit($event)"
     ></app-establecimiento-form>
+    }
 
     <ng-container modal-footer>
-      <button type="button" class="btn-secondary" (click)="cerrarModalEditar()" [disabled]="guardando()">Cancelar</button>
+      <button type="button" class="btn-secondary" (click)="editorModal.requestClose()" [disabled]="guardando()">Cancelar</button>
       <button type="submit" form="establecimientoFormBotanero" class="btn-primary" [disabled]="guardando()">
         {{ guardando() ? 'Guardando...' : 'Actualizar' }}
       </button>
     </ng-container>
   </app-modal>
 
-  <app-modal [open]="showPromosModal()" title="Editar promociones" size="lg" (closed)="cerrarModalPromos()">
+  <app-modal #promosModal [busy]="guardandoPromos()" [confirmDiscard]="promosDirty()" [open]="showPromosModal()" title="Editar promociones" size="lg" (closed)="cerrarModalPromos()">
     @if (promos) {
-      <form id="promosFormBotanero" (ngSubmit)="guardarPromos()">
+      <form id="promosFormBotanero" (ngSubmit)="guardarPromos()"><fieldset [disabled]="guardandoPromos()"><legend>Promociones por día</legend><p>Deja vacío un día para quitar su promoción.</p>
         @for (dia of diasPromo; track dia.key) {
           <app-textarea-field
             [label]="dia.label"
@@ -96,11 +106,11 @@
           [(ngModel)]="promos!.fldPromo300Lugares"
           name="fldPromo300Lugares"
         ></app-textarea-field>
-      </form>
+      </fieldset></form>
     }
 
     <ng-container modal-footer>
-      <button type="button" class="btn-secondary" (click)="cerrarModalPromos()" [disabled]="guardandoPromos()">Cancelar</button>
+      <button type="button" class="btn-secondary" (click)="promosModal.requestClose()" [disabled]="guardandoPromos()">Cancelar</button>
       <button type="submit" form="promosFormBotanero" class="btn-primary" [disabled]="guardandoPromos()">
         {{ guardandoPromos() ? 'Guardando...' : 'Guardar promos' }}
       </button>

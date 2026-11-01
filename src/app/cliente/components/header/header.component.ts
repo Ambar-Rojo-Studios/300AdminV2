@@ -1,6 +1,8 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, HostListener, DestroyRef, ViewChild, ElementRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter } from 'rxjs';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
 
 import { AuthService } from '../../../auth/services/auth.service';
 import { FiltroBusquedaComponent } from '../filtro-busqueda/filtro-busqueda.component';
@@ -16,6 +18,21 @@ import { EstablecimientoListDTO } from '../../../models/establecimiento.model';
 export class HeaderComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+
+  @ViewChild('menuToggle') menuToggle?: ElementRef<HTMLButtonElement>;
+
+  constructor() {
+    this.router.events.pipe(filter(event => event instanceof NavigationEnd), takeUntilDestroyed(inject(DestroyRef)))
+      .subscribe(() => this.cerrarMenu());
+  }
+
+  cerrarMenu() { this.menuMovilAbierto.set(false); }
+
+  @HostListener('document:keydown.escape')
+  cerrarConEscape() {
+    if (this.menuMovilAbierto()) { this.cerrarMenu(); this.menuToggle?.nativeElement.focus(); }
+    this.cancelarLogout();
+  }
 
   readonly menuMovilAbierto = signal(false);
   readonly showLogoutModal = signal(false);

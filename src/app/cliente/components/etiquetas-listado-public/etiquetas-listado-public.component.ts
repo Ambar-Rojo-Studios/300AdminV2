@@ -2,7 +2,7 @@ import { Component, Input, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 
-import { TagsEtiquetasXEstablecimientoService } from '../../../services/etiqueta-establecimiento.service';
+import { EtiquetasPublicService } from '../../../services/etiquetas-public.service';
 import { TagsEtiquetasXEstablecimiento } from '../../../models/tags-etiquetasXEstablecimiento.model';
 
 @Component({
@@ -13,7 +13,7 @@ import { TagsEtiquetasXEstablecimiento } from '../../../models/tags-etiquetasXEs
   styleUrls: ['./etiquetas-listado-public.component.css'],
 })
 export class EtiquetasListadoPublicComponent implements OnInit {
-  private readonly etiquetaEstablecimientoService = inject(TagsEtiquetasXEstablecimientoService);
+  private readonly etiquetaEstablecimientoService = inject(EtiquetasPublicService);
 
   @Input() establecimientoId: number | null = null;
 

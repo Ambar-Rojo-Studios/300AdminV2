@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, HostListener, input, output } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
+import { Component, ElementRef, HostListener, OnDestroy, afterRenderEffect, inject, input, output, signal, effect, viewChild } from '@angular/core';
 
 export type ModalSize = 'sm' | 'md' | 'lg';
 
@@ -31,8 +31,62 @@ export type ModalSize = 'sm' | 'md' | 'lg';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './modal.component.html',
+  styleUrl: './modal.component.css',
 })
-export class ModalComponent {
+export class ModalComponent implements OnDestroy {
+  private readonly document = inject(DOCUMENT);
+  private readonly dialog = viewChild<ElementRef<HTMLElement>>('dialog');
+  private readonly discardPrompt = viewChild<ElementRef<HTMLElement>>('discardPrompt');
+  private activeDialog: HTMLElement | null = null;
+  private previousFocus: HTMLElement | null = null;
+  busy = input(false);
+  confirmDiscard = input(false);
+  readonly discarding = signal(false);
+
+  constructor() {
+    effect(() => { this.open(); this.discarding.set(false); });
+    afterRenderEffect(() => {
+      const dialog = this.dialog()?.nativeElement;
+      if (dialog && !this.activeDialog) {
+        this.previousFocus = this.document.activeElement as HTMLElement | null;
+        this.activeDialog = dialog;
+        (this.focusableElements()[0] ?? dialog).focus();
+      } else if (!dialog && this.activeDialog) {
+        this.restoreFocus();
+      }
+      this.discardPrompt()?.nativeElement.focus();
+    });
+  }
+
+  private focusableElements(): HTMLElement[] {
+    return Array.from(this.activeDialog?.querySelectorAll<HTMLElement>(
+      'a[href], button, input, select, textarea, [tabindex]'
+    ) ?? []).filter(element => !element.matches(':disabled') && element.tabIndex >= 0 && element.getClientRects().length > 0);
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onTabPressed(event: KeyboardEvent): void {
+    if (!this.open() || event.key !== 'Tab' || !this.activeDialog) return;
+    const elements = this.focusableElements();
+    const first = elements[0], last = elements.at(-1);
+    const active = this.document.activeElement;
+    if (!first || !this.activeDialog.contains(active) || active === this.activeDialog
+      || (event.shiftKey ? active === first : active === last)) {
+      event.preventDefault();
+      (event.shiftKey ? last ?? this.activeDialog : first ?? this.activeDialog).focus();
+    }
+  }
+
+  private restoreFocus(): void {
+    this.activeDialog = null;
+    if (this.previousFocus?.isConnected) this.previousFocus.focus({ preventScroll: true });
+    this.previousFocus = null;
+  }
+
+  ngOnDestroy(): void { this.restoreFocus(); }
+
+  discard() { if (!this.busy()) { this.discarding.set(false); this.closed.emit(); } }
+
   /** Controla si el modal está visible. */
   open = input(false);
 
@@ -68,7 +122,9 @@ export class ModalComponent {
   }
 
   requestClose(): void {
-    this.closed.emit();
+    if (this.busy()) return;
+    if (this.confirmDiscard()) this.discarding.set(true);
+    else this.closed.emit();
   }
 
   get maxWidth(): string | null {

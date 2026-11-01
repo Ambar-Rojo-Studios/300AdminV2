@@ -1,11 +1,11 @@
 <div class="cards-grid">
   @for (est of establecimientos; track trackById($index, est)) {
-    <article class="card-establecimiento" (click)="irADetalle(est)">
+    <a class="card-establecimiento" [routerLink]="['/detalleEstablecimiento', est.idEstablecimiento]">
       <div class="card-establecimiento__media">
         @if (est.fldImgRefs) {
           <img
             [src]="est.fldImgRefs"
-            [alt]="est.fldNombre ?? 'Establecimiento'"
+            [alt]="est.fldNombre || 'Establecimiento'"
             loading="lazy"
           />
         } @else {
@@ -17,6 +17,7 @@
 
       <div class="card-establecimiento__body">
         <h3 class="card-establecimiento__title">{{ est.fldNombre }}</h3>
+        @if (est.fldCiudad) { <p class="card-establecimiento__ubicacion"><i class="fas fa-location-dot" aria-hidden="true"></i> {{ est.fldCiudad }}</p> }
         @if (est.fldDescripcion) {
           <p class="card-establecimiento__description">{{ est.fldDescripcion }}</p>
         }
@@ -26,7 +27,8 @@
             <span>{{ est.fldSugerenciaDeLaCasa }}</span>
           </div>
         }
+        <span class="card-establecimiento__link">Conocer el lugar <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
       </div>
-    </article>
+    </a>
   }
 </div>

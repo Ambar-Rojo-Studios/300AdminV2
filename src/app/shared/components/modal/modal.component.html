@@ -1,7 +1,7 @@
 @if (open()) {
   <div class="modal-overlay" (click)="onOverlayClick()">
     <div
-      class="modal-content"
+      #dialog tabindex="-1" class="modal-content" [attr.aria-busy]="busy()"
       [style.maxWidth]="maxWidth"
       role="dialog"
       aria-modal="true"
@@ -12,7 +12,7 @@
         <div class="modal-header">
           <h2>{{ title() }}</h2>
           @if (showCloseButton()) {
-            <button type="button" class="close-modal" (click)="requestClose()" aria-label="Cerrar">
+            <button type="button" class="close-modal" [disabled]="busy()" (click)="requestClose()" aria-label="Cerrar">
               &times;
             </button>
           }
@@ -20,6 +20,13 @@
       }
 
       <div class="modal-body">
+        @if (discarding()) {
+          <div #discardPrompt tabindex="-1" class="discard-prompt" role="alert">
+            <p>Hay cambios sin guardar en esta ficha. ¿Quieres descartarlos?</p>
+            <button type="button" class="btn-secondary" (click)="discarding.set(false)">Seguir editando</button>
+            <button type="button" class="btn-danger" (click)="discard()">Descartar cambios</button>
+          </div>
+        }
         <ng-content></ng-content>
       </div>
 

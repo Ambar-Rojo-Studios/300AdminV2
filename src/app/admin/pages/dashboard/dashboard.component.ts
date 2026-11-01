@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Observable, firstValueFrom } from 'rxjs';
+import { Observable, firstValueFrom, from } from 'rxjs';
 
 import { EstablecimientosService } from '../../../services/establecimientos.service';
 import { EmpresasService } from '../../../services/empresa.service';
@@ -11,6 +11,8 @@ import { ClientesService } from '../../../services/cliente.service';
 import { UsuarioService } from '../../../services/usuario.service';
 import { CulturalService } from '../../../services/capsula-cultural.service';
 import { TiposEstablecimientoService } from '../../../services/tipo-establecimiento.service';
+import { cargarListadoCompleto } from '../../../utils/cargar-listado-completo';
+import { pendientesFicha } from '../../../utils/estado-ficha';
 import { ToastService } from '../../../shared/services/toast.service';
 import { EstablecimientoListDTO } from '../../../models/establecimiento.model';
 import { listarPromocionesDTO } from '../../../models/promocion.model';
@@ -44,9 +46,7 @@ interface BarraDesglose {
   porcentaje: number;
 }
 
-// ponytail: no hay endpoint de conteos en el backend, se piden las listas completas y se cuentan aquí.
-// Techo: con miles de registros por catálogo esto pesa; ahí toca un endpoint /dashboard/resumen.
-const PAGE_SIZE_TOTAL = 10000;
+// El backend no tiene conteos agregados: completamos la paginación para contar sin truncar.
 const TOP_DESGLOSE = 6;
 
 const fuenteInicial = <T>(): Fuente<T> => ({ loading: true, error: false, data: [] });
@@ -130,6 +130,14 @@ export class DashboardComponent implements OnInit {
     );
   });
 
+  readonly fichasPendientes = computed(() => this.establecimientos().data
+    .map(lugar => ({ lugar, pendientes: pendientesFicha(lugar) }))
+    .filter(ficha => ficha.pendientes.length));
+
+  private listaCompleta<T>(consulta: (pagina: number, tamano: number) => Observable<ApiResponseConLista<T>>): Observable<ApiResponseConLista<T>> {
+    return from(cargarListadoCompleto(consulta).then(data => ({ codigoEstatus: 1, mensaje: '', cuerpoDeRespuesta: data })));
+  }
+
   readonly desgloseCargando = computed(() => this.establecimientos().loading);
   readonly desgloseError = computed(() => this.establecimientos().error);
   readonly tiposCargando = computed(() => this.desgloseCargando() || this.tipos().loading);
@@ -144,15 +152,15 @@ export class DashboardComponent implements OnInit {
     this.hoy.set(new Date());
     this.cargando.set(true);
     const cargas = [
-      this.cargar('Establecimientos', this.establecimientosService.obtenerEstablecimientos(1, PAGE_SIZE_TOTAL), this.establecimientos),
-      this.cargar('Empresas', this.empresasService.obtenerEmpresas(1, PAGE_SIZE_TOTAL), this.empresas),
-      this.cargar('Marcas', this.marcasService.obtenerMarcas(1, PAGE_SIZE_TOTAL), this.marcas),
-      this.cargar('Promociones', this.promocionesService.obtenerPromociones(1, PAGE_SIZE_TOTAL), this.promociones),
-      this.cargar('Etiquetas', this.etiquetasService.listarEtiquetas(1, PAGE_SIZE_TOTAL), this.etiquetas),
-      this.cargar('Clientes', this.clienteService.listarClientes(1, PAGE_SIZE_TOTAL), this.clientes),
-      this.cargar('Usuarios', this.usuarioService.obtenerUsuarios(1, PAGE_SIZE_TOTAL), this.usuarios),
+      this.cargar('Establecimientos', this.listaCompleta((pagina, tamano) => this.establecimientosService.obtenerEstablecimientos(pagina, tamano)), this.establecimientos),
+      this.cargar('Empresas', this.listaCompleta((pagina, tamano) => this.empresasService.obtenerEmpresas(pagina, tamano)), this.empresas),
+      this.cargar('Marcas', this.listaCompleta((pagina, tamano) => this.marcasService.obtenerMarcas(pagina, tamano)), this.marcas),
+      this.cargar('Promociones', this.listaCompleta((pagina, tamano) => this.promocionesService.obtenerPromociones(pagina, tamano)), this.promociones),
+      this.cargar('Etiquetas', this.listaCompleta((pagina, tamano) => this.etiquetasService.listarEtiquetas(pagina, tamano)), this.etiquetas),
+      this.cargar('Clientes', this.listaCompleta((pagina, tamano) => this.clienteService.listarClientes(pagina, tamano)), this.clientes),
+      this.cargar('Usuarios', this.listaCompleta((pagina, tamano) => this.usuarioService.obtenerUsuarios(pagina, tamano)), this.usuarios),
       this.cargar('Cápsulas', this.capsulaService.obtenerCulturales(), this.capsulas),
-      this.cargar('Tipos', this.tipoService.obtenerTipos(1, PAGE_SIZE_TOTAL), this.tipos)
+      this.cargar('Tipos', this.listaCompleta((pagina, tamano) => this.tipoService.obtenerTipos(pagina, tamano)), this.tipos)
     ];
     Promise.all(cargas).then(() => this.cargando.set(false));
   }
@@ -179,10 +187,10 @@ export class DashboardComponent implements OnInit {
     destino.set(fuenteInicial<T>());
     try {
       const res = await firstValueFrom(peticion);
-      if (res?.codigoEstatus !== 1 || !Array.isArray(res.cuerpoDeRespuesta)) {
+      if (res && (res.codigoEstatus !== 1 || !Array.isArray(res.cuerpoDeRespuesta))) {
         throw new Error(res?.mensaje || 'Respuesta inesperada del servidor.');
       }
-      destino.set({ loading: false, error: false, data: res.cuerpoDeRespuesta });
+      destino.set({ loading: false, error: false, data: res?.cuerpoDeRespuesta ?? [] });
     } catch (err: unknown) {
       destino.set({ loading: false, error: true, data: [] });
       const mensaje = err instanceof Error ? err.message : 'Error de conexión';

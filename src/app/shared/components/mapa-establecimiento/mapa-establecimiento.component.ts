@@ -21,7 +21,7 @@ import {
   GoogleMapsLinkExtractorDirective,
   GoogleMapsCoords,
 } from '../../../utils/google-maps-link-extractor.directive';
-import { EstablecimientosService } from '../../../services/establecimientos.service';
+import { EstablecimientosPublicService } from '../../../services/establecimientos-public.service';
 
 // Declaración para TypeScript (cargado via <script> en index.html)
 declare const google: any;
@@ -89,7 +89,7 @@ export class MapaEstablecimientoComponent
    * servicio (tests, o mientras el esqueleto aún no lo provee). En modo
    * single sin servicio disponible se emite error vía {@link error}.
    */
-  private readonly establecimientosService = inject(EstablecimientosService, {
+  private readonly establecimientosService = inject(EstablecimientosPublicService, {
     optional: true,
   });
 
@@ -112,6 +112,7 @@ export class MapaEstablecimientoComponent
   @Input() height = '400px';
   @Input() infoWindow = true;
   @Input() showLinkInput = false;
+  @Input() showCoordinateFields = true;
 
   // === OUTPUTS ===
   @Output() markerClick = new EventEmitter<EstablecimientoMarker>();
@@ -126,6 +127,7 @@ export class MapaEstablecimientoComponent
   readonly infoWindows = signal<any[]>([]);
   readonly singleMarker = signal<any | null>(null);
   readonly isMapReady = signal(false);
+  readonly mapError = signal('');
   readonly isLoading = signal(false);
 
   // === Estado UI del extractor de enlace (modo selección) ===
@@ -135,6 +137,7 @@ export class MapaEstablecimientoComponent
   // === Privados ===
   private singleSubscription?: Subscription;
   private destroyed = false;
+  private renderVersion = 0;
 
   // ---------------------------------------------------------------
   // Lifecycle
@@ -182,10 +185,9 @@ export class MapaEstablecimientoComponent
 
   private async initMap(): Promise<void> {
     if (!isPlatformBrowser(this.platformId)) return;
+    this.mapError.set('');
     if (typeof google === 'undefined' || !google.maps) {
-      console.warn(
-        '[MapaEstablecimiento] Google Maps no está disponible (posible SSR sin API key)'
-      );
+      this.mapError.set('El mapa no está disponible en este momento. Puedes consultar los datos del lugar.');
       return;
     }
     const host = this.mapContainerRef?.nativeElement;
@@ -193,6 +195,7 @@ export class MapaEstablecimientoComponent
 
     try {
       await google.maps.importLibrary('maps');
+      if (this.destroyed) return;
       const opts = {
         center: this.center,
         zoom: this.zoom,
@@ -207,6 +210,14 @@ export class MapaEstablecimientoComponent
       this.map.set(new google.maps.Map(host, opts));
       this.isMapReady.set(true);
       this.ready.emit();
+      if (this.esModoSeleccion()) {
+        this.map().addListener('click', (event: any) => {
+          if (this.disabled || !event.latLng) return;
+          const coords = { lat: String(event.latLng.lat()), lng: String(event.latLng.lng()) };
+          this.coordsChange.emit(coords);
+          void this.renderSeleccion(coords);
+        });
+      }
 
       // Primera renderización según inputs que vengan seteados.
       if (this.esModoSeleccion() && this.coords) {
@@ -218,6 +229,7 @@ export class MapaEstablecimientoComponent
       }
     } catch (err) {
       console.error('[MapaEstablecimiento] Error al inicializar mapa:', err);
+      this.mapError.set('No pudimos cargar el mapa. Revisa tu conexión e intenta de nuevo.');
       this.error.emit('Error al inicializar el mapa');
     }
   }
@@ -235,6 +247,7 @@ export class MapaEstablecimientoComponent
 
     this.clearMarkers();
 
+    const version = this.renderVersion;
     const safe = list ?? [];
     if (safe.length === 0) {
       googleMap.setCenter(this.center);
@@ -244,6 +257,7 @@ export class MapaEstablecimientoComponent
 
     try {
       await google.maps.importLibrary('marker');
+      if (this.destroyed || version !== this.renderVersion) return;
       const { AdvancedMarkerElement, PinElement } = google.maps.marker;
 
       const bounds = new google.maps.LatLngBounds();
@@ -300,7 +314,7 @@ export class MapaEstablecimientoComponent
   private renderSingle(id: number): void {
     if (this.destroyed) return;
     if (!this.establecimientosService) {
-      this.error.emit('EstablecimientosService no disponible para resolver el id');
+      this.error.emit('EstablecimientosPublicService no disponible para resolver el id');
       console.warn('[MapaEstablecimiento] establecimientosService no inyectado');
       return;
     }
@@ -312,7 +326,7 @@ export class MapaEstablecimientoComponent
     this.isLoading.set(true);
 
     this.singleSubscription = this.establecimientosService
-      .obtenerIdPorEstablecimiento(id)
+      .obtenerEstablecimientoPorId(id)
       .subscribe({
         next: (res: any) => {
           const est = res?.cuerpoDeRespuesta;
@@ -522,6 +536,7 @@ export class MapaEstablecimientoComponent
   // ---------------------------------------------------------------
 
   private clearMarkers(): void {
+    this.renderVersion++;
     for (const m of this.markers()) m.map = null;
     this.markers.set([]);
     for (const w of this.infoWindows()) {
@@ -554,6 +569,11 @@ export class MapaEstablecimientoComponent
   // ---------------------------------------------------------------
   // Util pública (para padres que quieran forzar resize)
   // ---------------------------------------------------------------
+
+  reintentarMapa(): void {
+    this.cleanupMap();
+    void this.initMap();
+  }
 
   resizeMap(): void {
     const m = this.map();

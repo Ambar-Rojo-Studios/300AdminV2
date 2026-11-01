@@ -2,25 +2,41 @@
   <button
     type="button"
     class="menu-toggle"
-    aria-label="Mostrar u ocultar filtros"
+    aria-label="Mostrar u ocultar filtros" [attr.aria-expanded]="!panelOculto" aria-controls="panel-filtros"
     (click)="alternarPanel()"
   >
     <i class="fa-solid fa-bars"></i>
   </button>
 
-  <div class="filter-map-container">
+  <div class="filter-map-container" id="panel-filtros" [attr.inert]="panelOculto ? '' : null">
     <header class="filter-map__header">
       <h3>Filtros</h3>
       <button
         type="button"
         class="toggle-btn"
-        [class.activo]="esBusquedaEstricta"
+        [class.activo]="esBusquedaEstricta" [attr.aria-pressed]="esBusquedaEstricta"
         (click)="alternarBusquedaEstricta()"
       >
-        {{ esBusquedaEstricta ? 'Modo estricto' : 'Modo flexible' }}
+        {{ esBusquedaEstricta ? 'Todas las etiquetas' : 'Cualquier etiqueta' }}
       </button>
     </header>
 
+    <p>{{ esBusquedaEstricta ? 'El lugar debe tener todas las etiquetas elegidas.' : 'El lugar puede tener cualquiera de las etiquetas elegidas.' }}</p>
+    <button type="button" class="toggle-btn" (click)="limpiarFiltros()" [disabled]="!fldEtiquetCsv.length">Limpiar filtros</button>
+    <div aria-live="polite" class="filter-map__estado">
+      @if (cargando) { <p role="status">Cargando lugares…</p> }
+      @else if (error) {
+        <p role="alert">{{ error }}</p><button type="button" class="toggle-btn" (click)="aplicarFiltrado()">Reintentar</button>
+      } @else {
+        <p>{{ total ? total + ' lugares encontrados' : 'No hay lugares con estos filtros.' }}</p>
+        @if (!fldEtiquetCsv.length && total === 100) { <small>Mostrando los primeros 100 lugares. Usa las etiquetas para afinar.</small> }
+        @if (sinCoordenadas) { <small>{{ sinCoordenadas }} lugares no tienen coordenadas para el mapa.</small> }
+      }
+    </div>
+    @if (cargandoCategorias) { <p role="status">Cargando filtros…</p> }
+    @else if (errorCategorias) {
+      <p role="alert">{{ errorCategorias }}</p><button type="button" class="toggle-btn" (click)="obtenerCategoriasConEtiquetas()">Reintentar filtros</button>
+    } @else if (!categoriasConEtiquetas.length) { <p>Aún no hay etiquetas disponibles.</p> }
     <div class="filter-map__categorias">
       @for (cat of categoriasConEtiquetas; track cat.idCategoria) {
         <article class="categoria-card">
@@ -30,7 +46,7 @@
               <button
                 type="button"
                 class="etiqueta-btn"
-                [class.seleccionada]="estaSeleccionada(et.idEtiqueta)"
+                [class.seleccionada]="estaSeleccionada(et.idEtiqueta)" [attr.aria-pressed]="estaSeleccionada(et.idEtiqueta)"
                 (click)="alternarEtiqueta(et.idEtiqueta)"
               >
                 {{ et.fldNombre }}

@@ -1,4 +1,6 @@
 :host { display: block; min-width: 0; }
+.dashboard-header { padding: 1.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); }
+.dashboard-header h1 { margin-top: .5rem; font-size: 2rem; letter-spacing: -.04em; }
 .dashboard-fecha { margin-top: 6px; color: var(--text-secondary); font-size: 0.9rem; }
 .dashboard-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .kpi-card { min-width: 0; padding: 20px; gap: 12px; }
@@ -25,7 +27,7 @@
 .desglose-estado { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: 240px; text-align: center; color: var(--text-secondary); font-size: 0.9rem; }
 .desglose-estado > i { font-size: 1.5rem; }
 .estado-error { color: var(--danger); }
-@media (max-width: 1400px) {
+@media (max-width: 1250px) {
   .dashboard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 650px) {
@@ -37,3 +39,10 @@
   .revision-promociones { gap: 12px; padding: 16px; }
   .revision-promociones .kpi-icon { display: none; }
 }
+
+.dashboard-acciones { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.fichas-pendientes { padding: 1.5rem; margin-bottom: 1.5rem; display: block; }
+.fichas-pendientes h2 { font-size: 1.1rem; margin-bottom: .75rem; }
+.fichas-pendientes > p, .fichas-pendientes li p { color: var(--text-secondary); font-size: .9rem; }
+.fichas-pendientes ul { padding: 0; list-style: none; margin-top: .75rem; }
+.fichas-pendientes li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .75rem; border-top: 1px solid var(--border); padding: .75rem 0; }

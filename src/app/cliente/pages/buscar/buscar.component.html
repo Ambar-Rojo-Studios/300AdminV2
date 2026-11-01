@@ -1,27 +1,41 @@
 <section class="buscar">
   <header class="buscar__header">
+    <span class="eyebrow">Encuentra tu próximo plan</span>
     <h1 class="buscar__title">Buscar establecimientos</h1>
-    <p class="buscar__subtitle">
-      Escribe el nombre del lugar para verlo en el mapa.
-    </p>
+    <p class="buscar__subtitle">Encuentra un lugar por su nombre y consulta su ubicación.</p>
     <div class="buscar__input">
-      <app-filtro-busqueda
-        (establecimientoSeleccionado)="onSeleccionado($event)"
-      ></app-filtro-busqueda>
+      <app-filtro-busqueda #buscador inputId="busqueda-pagina" [mostrarSugerencias]="false"
+        (estadoCambio)="onEstado($event)" />
     </div>
   </header>
-
-  @if (cargando()) {
-    <div class="buscar__loading">Buscando…</div>
-  } @else if (error()) {
-    <div class="buscar__error">{{ error() }}</div>
-  } @else {
-    <section class="buscar__mapa">
-      <app-mapa-establecimiento
-        [establecimientos]="markers()"
-        [height]="'60vh'"
-        (markerClick)="onMarkerClick($event)"
-      ></app-mapa-establecimiento>
-    </section>
+  <div aria-live="polite">
+    @if (estado().cargando) {
+      <p role="status">Buscando lugares…</p>
+    } @else if (estado().error) {
+      <p role="alert">{{ estado().error }}</p>
+      <button type="button" class="btn-secondary" (click)="buscador.onSearchChange(estado().termino)">Reintentar</button>
+    } @else if (!estado().termino) {
+      <p>Escribe el nombre de un lugar para comenzar.</p>
+    } @else if (estado().resultados.length === 0) {
+      <p>No encontramos lugares con ese nombre. Prueba con otro.</p>
+    } @else {
+      <p>{{ estado().resultados.length }} resultados{{ estado().resultados.length === 50 ? ' (mostrando los primeros 50; escribe un nombre más específico)' : '' }}.</p>
+    }
+  </div>
+  @if (estado().resultados.length > 0) {
+    <div class="buscar__contenido">
+      <ul class="buscar__resultados" aria-label="Lugares encontrados">
+        @for (est of estado().resultados; track est.idEstablecimiento) {
+          <li><a [routerLink]="['/detalleEstablecimiento', est.idEstablecimiento]">
+            <strong>{{ est.fldNombre }}</strong><span>{{ est.fldDireccion }}</span>
+          </a></li>
+        }
+      </ul>
+      <section class="buscar__mapa" aria-label="Ubicaciones de los resultados">
+        @if (markers().length > 0) {
+          <app-mapa-establecimiento [establecimientos]="markers()" height="60vh" (markerClick)="router.navigate(['/detalleEstablecimiento', $event.id])" />
+        } @else { <p>Estos lugares aún no tienen ubicación disponible. Puedes abrir sus detalles en la lista.</p> }
+      </section>
+    </div>
   }
 </section>

@@ -64,6 +64,7 @@
         }
       </div>
 
+      <p><a routerLink="/forgot-password" [queryParams]="{ tipo: 'usuario' }">Olvidé mi contraseña</a></p>
       <!-- Botón de envío -->
       <div class="form-grid">
         <button type="submit" [disabled]="loginForm().invalid || cargando()">

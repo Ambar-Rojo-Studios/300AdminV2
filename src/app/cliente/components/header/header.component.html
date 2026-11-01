@@ -17,24 +17,26 @@
 
     <button
       type="button"
-      class="public-header__burger"
-      aria-label="Abrir menú"
+      class="public-header__burger" #menuToggle
+      [attr.aria-label]="menuMovilAbierto() ? 'Cerrar menú' : 'Abrir menú'"
+      [attr.aria-expanded]="menuMovilAbierto()" aria-controls="public-nav"
       (click)="alternarMenuMovil()"
     >
       <i class="fa-solid fa-bars"></i>
     </button>
 
     <nav
-      class="public-header__nav"
+      class="public-header__nav" id="public-nav"
       [class.public-header__nav--open]="menuMovilAbierto()"
     >
       <ul class="public-header__nav-list">
+        <li class="public-header__nav-item"><a routerLink="/buscar" routerLinkActive="public-header__nav-link--active" class="public-header__nav-link" (click)="cerrarMenu()">Buscar lugares</a></li>
         <li class="public-header__nav-item">
           <a
-            routerLink="/"
+            routerLink="/" [routerLinkActiveOptions]="{ exact: true }"
             routerLinkActive="public-header__nav-link--active"
             class="public-header__nav-link"
-            (click)="alternarMenuMovil()"
+            (click)="cerrarMenu()"
           >
             ¿A dónde ir?
           </a>
@@ -44,7 +46,7 @@
             routerLink="/mapa"
             routerLinkActive="public-header__nav-link--active"
             class="public-header__nav-link"
-            (click)="alternarMenuMovil()"
+            (click)="cerrarMenu()"
           >
             Mapa
           </a>
@@ -54,7 +56,7 @@
             routerLink="/mapa-filtro"
             routerLinkActive="public-header__nav-link--active"
             class="public-header__nav-link"
-            (click)="alternarMenuMovil()"
+            (click)="cerrarMenu()"
           >
             Filtro Mapa
           </a>
@@ -66,7 +68,7 @@
               routerLink="/login/cliente"
               routerLinkActive="public-header__nav-link--active"
               class="public-header__nav-link"
-              (click)="alternarMenuMovil()"
+              (click)="cerrarMenu()"
             >
               Iniciar sesión
             </a>
@@ -76,7 +78,7 @@
               routerLink="/registro/cliente"
               routerLinkActive="public-header__nav-link--active"
               class="public-header__nav-link"
-              (click)="alternarMenuMovil()"
+              (click)="cerrarMenu()"
             >
               Registrarse
             </a>

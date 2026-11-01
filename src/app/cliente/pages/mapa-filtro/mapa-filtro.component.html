@@ -1,5 +1,6 @@
-<div class="mapa-filtro-wrapper">
+<div class="mapa-filtro-wrapper" [class.panel--oculto]="panelOculto()">
   <app-filter-map
+    (panelCambio)="panelOculto.set($event)"
     (coordenadasFiltradas)="onCoordenadasFiltradas($event)"
   ></app-filter-map>
 

@@ -36,7 +36,7 @@ export class ClienteEstrellaComponent {
       return;
     }
     const idCliente = this.authService.getId();
-    if (!idCliente) {
+    if (!idCliente || !this.authService.estaClienteLogueado() || !this.authService.estaAutenticado()) {
       this.error.set('Debes iniciar sesión como cliente para calificar.');
       return;
     }

@@ -17,7 +17,7 @@ export interface idEstablecimiento {
   idEstablecimiento: number;
   fkIdSuscripcion: number;
   fkIdEmpresa: number;
-  fldTipoEstablecimiento: number | null;
+  fldTipoEstablecimiento: string | number | null;
   fldNombre: string;
   fldDescripcion: string;
   fldEstado: string;
@@ -30,6 +30,11 @@ export interface idEstablecimiento {
   fldSugerenciaDeLaCasa: string;
   fldImgRefs: string;
   fldMenu: string | null;
+  imagenesPerfil?: string[];
+  imagenesMenu?: string[];
+  fldImgRefs2?: string | null;
+  fldImgRefs3?: string | null;
+  fldImgRefs4?: string | null;
   fldHorarioApertura: string;
   fldHorarioCierre: string;
   fldLunes: boolean;

@@ -15,8 +15,10 @@ export const guestGuard: CanActivateFn = (route, state) => {
 
   if (authService.estaUsuarioLogueado()) {
     router.navigate(['/admin/dashboard']);
+  } else if (authService.obtenerRol() === 'botanero') {
+    router.navigate(['/mi-lugar']);
   } else {
-    router.navigate(['/inicio']);
+    router.navigate(['/']);
   }
   return false;
 };

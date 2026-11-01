@@ -1,6 +1,7 @@
 <section class="admin-page" aria-labelledby="dashboard-titulo">
-  <header class="header-actions">
+  <header class="header-actions dashboard-header">
     <div>
+      <span class="eyebrow">Tu operación, de un vistazo</span>
       <h1 id="dashboard-titulo">Dashboard</h1>
       <p class="dashboard-fecha"><time [attr.datetime]="hoy().toISOString()">{{ fechaHoy() }}</time></p>
     </div>
@@ -10,6 +11,11 @@
     </button>
   </header>
 
+  <nav class="dashboard-acciones" aria-label="Gestión rápida">
+    <a class="btn-primary" routerLink="/admin/establecimientos">Gestionar establecimientos</a>
+    <a class="btn-secondary" routerLink="/admin/cuentas-botanero">Cuentas de botaneros</a>
+    <a class="btn-secondary" routerLink="/admin/comentarios">Revisar comentarios</a>
+  </nav>
   <div class="dashboard-grid" aria-label="Resumen de catálogos">
     @for (kpi of kpis(); track kpi.link) {
       <a class="card kpi-card" [routerLink]="kpi.link"
@@ -46,6 +52,20 @@
     }
   </a>
 
+  <section class="card fichas-pendientes" aria-labelledby="fichas-titulo">
+    <h2 id="fichas-titulo">Fichas por completar</h2>
+    @if (desgloseCargando()) { <p role="status">Revisando información…</p> }
+    @else if (desgloseError()) { <p>No se pudo revisar la información. Pulsa Actualizar para reintentar.</p> }
+    @else if (!fichasPendientes().length) { <p>No encontramos pendientes en fotos, menú, ubicación, descripción y horario.</p> }
+    @else {
+      <p>{{ fichasPendientes().length }} establecimientos tienen datos pendientes. Mostrando hasta 5.</p>
+      <ul>
+        @for (ficha of fichasPendientes().slice(0, 5); track ficha.lugar.idEstablecimiento) {
+          <li><div><strong>{{ ficha.lugar.fldNombre }}</strong><p>{{ ficha.pendientes.join(', ') }}</p></div><a routerLink="/admin/establecimientos" [queryParams]="{ editar: ficha.lugar.idEstablecimiento }">Completar ficha</a></li>
+        }
+      </ul>
+    }
+  </section>
   <div class="desglose-grid">
     @for (panel of [
       { id: 'ciudad', titulo: 'Establecimientos por ciudad', barras: porCiudad(), loading: desgloseCargando(), error: desgloseError() },

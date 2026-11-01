@@ -1,0 +1,25 @@
+<header class="resumen-header"><div><span class="eyebrow">Todo en un solo lugar</span><h1>Mi panel</h1><p>Gestiona tus establecimientos y mantén sus fichas al día.</p></div><button type="button" class="btn-secondary" (click)="cargar()" [disabled]="cargando()"><i class="fas fa-rotate-right" aria-hidden="true"></i>{{ cargando() ? 'Actualizando…' : 'Actualizar' }}</button></header>
+@if (cargando()) { <app-loading-spinner /> }
+@else if (error()) { <p role="alert">{{ error() }}</p><button type="button" class="btn-secondary" (click)="cargar()">Reintentar</button> }
+@else if (!establecimientos().length) { <div class="card estado-vacio"><h2>Aún no tienes lugares asignados</h2><p>Contacta a la administración para asociar los establecimientos de tu empresa.</p></div> }
+@else {
+  <dl class="resumen-kpis">
+    <div><dt><i class="fas fa-store" aria-hidden="true"></i> Mis establecimientos</dt><dd>{{ establecimientos().length }}</dd></div>
+    <div><dt><i class="fas fa-utensils" aria-hidden="true"></i> Con menú</dt><dd>{{ conMenu() }}</dd></div>
+    <div><dt><i class="fas fa-tag" aria-hidden="true"></i> Con promociones</dt><dd>{{ conPromociones() }}</dd></div>
+    <div><dt><i class="fas fa-list-check" aria-hidden="true"></i> Fichas por completar</dt><dd>{{ incompletas() }}</dd></div>
+  </dl>
+  <h2>Mis establecimientos</h2>
+  <div class="lugares-grid">
+    @for (ficha of fichas(); track ficha.lugar.idEstablecimiento) {
+      <article class="card lugar-card">
+        @if (ficha.lugar.imagenesPerfil?.length) { <img [src]="ficha.lugar.imagenesPerfil[0]" [alt]="ficha.lugar.fldNombre" loading="lazy" /> }
+        @else { <div class="lugar-placeholder"><i class="fas fa-store" aria-hidden="true"></i><span>Tu lugar, pronto con foto</span></div> }
+        <div class="lugar-body"><h3>{{ ficha.lugar.fldNombre }}</h3><p><i class="fas fa-location-dot" aria-hidden="true"></i> {{ ficha.lugar.fldDireccion }}, {{ ficha.lugar.fldCiudad }}</p>
+          @if (ficha.pendientes.length) { <p class="pendientes"><span class="badge badge-warning">Ficha por completar</span><span>{{ ficha.pendientes.join(', ') }}</span></p> } @else { <p><span class="badge badge-success"><i class="fas fa-check" aria-hidden="true"></i> Información principal completa</span></p> }
+          <div class="lugar-acciones"><a class="btn-primary" [routerLink]="['/mi-lugar/establecimiento', ficha.lugar.idEstablecimiento]">Administrar lugar <i class="fas fa-arrow-right" aria-hidden="true"></i></a><a [routerLink]="['/detalleEstablecimiento', ficha.lugar.idEstablecimiento]" target="_blank" rel="noopener">Ver ficha pública <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i></a></div>
+        </div>
+      </article>
+    }
+  </div>
+}

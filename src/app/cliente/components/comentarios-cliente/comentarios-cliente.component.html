@@ -1,7 +1,7 @@
 <section class="comentarios" aria-label="Comentarios del establecimiento">
   <header class="comentarios__header">
     <h2>Comentarios</h2>
-    <app-cliente-estrella [establecimientoId]="establecimientoId()"></app-cliente-estrella>
+    @if (idClienteAutenticado()) { <app-cliente-estrella [establecimientoId]="establecimientoId()"></app-cliente-estrella> }
   </header>
 
   @if (cargando()) {
@@ -84,6 +84,8 @@
         <button type="submit" class="btn btn--primary">Comentar</button>
       </div>
     </form>
+  } @else if (sesionIniciada()) {
+    <p class="comentarios__login-hint">Para comentar y calificar necesitas una cuenta de cliente.</p>
   } @else {
     <p class="comentarios__login-hint">
       <a routerLink="/login/cliente">Inicia sesión</a> para dejar un comentario.

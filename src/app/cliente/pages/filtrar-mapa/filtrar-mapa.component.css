@@ -8,6 +8,7 @@
 }
 
 .filter-map-wrapper.oculto .filter-map-container {
+  display: none;
   transform: translateX(-120%);
   opacity: 0;
   pointer-events: none;
@@ -40,7 +41,7 @@
   border-radius: 16px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
   padding: 1.25rem;
-  width: 280px;
+  width: min(280px, calc(100vw - 4rem));
   max-height: 80vh;
   overflow-y: auto;
   color: var(--text, #333);
@@ -129,3 +130,5 @@
   color: #fff;
   box-shadow: 0 0 10px rgba(202, 65, 56, 0.4);
 }
+.filter-map__estado { margin: .75rem 0; }
+.filter-map__estado small { display: block; }

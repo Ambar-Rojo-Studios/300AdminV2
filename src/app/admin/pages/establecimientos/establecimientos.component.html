@@ -6,11 +6,31 @@
     </button>
   </div>
 
+  <form class="catalogo-filtros" (submit)="$event.preventDefault()" aria-label="Filtrar establecimientos">
+    <label>Nombre<input type="search" name="nombre" placeholder="Buscar establecimiento…" [ngModel]="filtroNombre()" (ngModelChange)="filtroNombre.set($event); currentPage.set(1)" /></label>
+    <label>Ciudad<select name="ciudad" [ngModel]="filtroCiudad()" (ngModelChange)="filtroCiudad.set($event); currentPage.set(1)">
+      <option value="">Todas las ciudades</option>
+      @for (ciudad of ciudades(); track ciudad) { <option [value]="ciudad">{{ ciudad }}</option> }
+    </select></label>
+    <label>Empresa<select name="empresa" [ngModel]="filtroEmpresa()" (ngModelChange)="filtroEmpresa.set($event); currentPage.set(1)">
+      <option value="">Todas las empresas</option>
+      @for (empresa of empresas(); track empresa.idEmpresa) { <option [value]="empresa.idEmpresa">{{ empresa.fldNombre }}</option> }
+    </select></label>
+    <label>Tipo<select name="tipo" [ngModel]="filtroTipo()" (ngModelChange)="filtroTipo.set($event); currentPage.set(1)">
+      <option value="">Todos los tipos</option>
+      @for (tipo of tiposEstablecimiento(); track tipo.idTipoEstablecimiento) { <option [value]="tipo.idTipoEstablecimiento">{{ tipo.fldNombre }}</option> }
+    </select></label>
+    <button type="button" class="btn-secondary" (click)="limpiarFiltros()">Limpiar filtros</button>
+  </form>
+  @if (errorListado()) {
+    <div role="alert"><p>{{ errorListado() }}</p><button type="button" class="btn-secondary" (click)="cargarEstablecimientos()">Reintentar</button></div>
+  } @else {
+  @if (!isLoading()) { <p role="status">{{ establecimientosFiltrados().length }} de {{ establecimientos().length }} establecimientos</p> }
   <app-data-table
     [columns]="columns"
-    [data]="establecimientosOrdenados()"
+    [data]="paginaActual()"
     [loading]="isLoading()"
-    emptyMessage="No hay establecimientos para mostrar."
+    emptyMessage="No hay establecimientos que coincidan. Prueba otros filtros."
     [currentPage]="currentPage()"
     [totalPages]="totalPages()"
     [sortKey]="sortKey()"
@@ -27,8 +47,14 @@
       </button>
     </ng-template>
   </app-data-table>
+  }
 
-  <app-modal [open]="showFormModal()" [title]="modalTitle()" size="lg" (closed)="cerrarModalFormulario()">
+  <app-modal #editorModal [busy]="isSaving()" [confirmDiscard]="formDirty()" [open]="showFormModal()" [title]="modalTitle()" size="lg" (closed)="cerrarModalFormulario()">
+    @if (loadingEdicion()) { <p role="status">Cargando la ficha completa…</p> }
+    @else if (errorEdicion()) {
+      <p role="alert">{{ errorEdicion() }}</p>
+      @if (editTarget(); as target) { <button type="button" class="btn-secondary" (click)="abrirModalEditar(target)">Reintentar</button> }
+    } @else if (showFormModal()) {
     <app-establecimiento-form
       mode="admin"
       formId="establecimientoForm"
@@ -37,12 +63,14 @@
       [suscripciones]="suscripciones()"
       [tiposEstablecimiento]="tiposEstablecimiento()"
       [saving]="isSaving()"
+      (dirtyChange)="formDirty.set($event)"
       (formSubmit)="onEstablecimientoSubmit($event)"
     ></app-establecimiento-form>
+    }
 
     <ng-container modal-footer>
-      <button type="button" class="btn-secondary" (click)="cerrarModalFormulario()" [disabled]="isSaving()">Cancelar</button>
-      <button type="submit" form="establecimientoForm" class="btn-primary" [disabled]="isSaving()">
+      <button type="button" class="btn-secondary" (click)="editorModal.requestClose()" [disabled]="isSaving()">Cancelar</button>
+      <button type="submit" form="establecimientoForm" class="btn-primary" [disabled]="isSaving() || loadingEdicion() || !!errorEdicion()">
         {{ isSaving() ? 'Guardando...' : (modalMode() === 'edit' ? 'Actualizar' : 'Guardar') }}
       </button>
     </ng-container>

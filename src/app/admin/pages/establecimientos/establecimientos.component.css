@@ -1,0 +1,6 @@
+.catalogo-filtros { display: flex; flex-wrap: wrap; align-items: end; gap: 1rem; margin-bottom: 1rem; padding: 1.25rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); }
+.catalogo-filtros label { display: grid; gap: .35rem; flex: 1 1 180px; min-width: 0; }
+.catalogo-filtros input, .catalogo-filtros select { width: 100%; min-height: 44px; }
+.catalogo-filtros label { color: var(--text-secondary); font-size: .8rem; font-weight: 600; }
+.catalogo-filtros label:first-child { flex-grow: 2; }
+.admin-page > p[role="status"] { color: var(--text-secondary); font-size: .85rem; margin: 1rem .25rem; }

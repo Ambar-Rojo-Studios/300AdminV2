@@ -8,7 +8,7 @@ import {
   makeStateKey,
 } from '@angular/core';
 import { CommonModule, isPlatformServer } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Title, Meta } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 
@@ -28,11 +28,13 @@ const INICIO_DATA_KEY = makeStateKey<EstablecimientoListDTO[]>('inicio-data');
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     CarruselEstablecimientosComponent,
     CardEstablecimientoComponent,
     MapaEstablecimientoComponent,
   ],
   templateUrl: './inicio.component.html',
+  styleUrl: './inicio.component.css',
 })
 export class InicioComponent implements OnInit {
   private readonly publicService = inject(EstablecimientosPublicService);
@@ -58,6 +60,8 @@ export class InicioComponent implements OnInit {
       return;
     }
 
+    this.cargando.set(true);
+    this.error.set(null);
     try {
       const res: any = await firstValueFrom(
         this.publicService.obtenerEstablecimientosPublicos(1, 100)

@@ -21,6 +21,7 @@ import {
 export class MapaFiltroComponent {
   private readonly router = inject(Router);
 
+  readonly panelOculto = signal(false);
   readonly filtrados = signal<EstablecimientoMarker[]>([]);
 
   onCoordenadasFiltradas(list: CoordenadaFiltrada[]): void {

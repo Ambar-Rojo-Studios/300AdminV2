@@ -1,4 +1,8 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, inject, signal, OnInit, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subscription } from 'rxjs';
+import { EtiquetasListadoPublicComponent } from '../../../cliente/components/etiquetas-listado-public/etiquetas-listado-public.component';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { BotaneroService } from '../../../services/botanero.service';
@@ -85,13 +89,15 @@ function dtoToFormValue(dto: BotaneroEstablecimientoDTO): EstablecimientoFormVal
     fldImgRefs3: dto.imagenesPerfil?.[2] ?? null,
     fldImgRefs4: dto.imagenesPerfil?.[3] ?? null,
     fldMenu: dto.imagenesMenu?.[0] ?? null,
+    imagenesPerfil: dto.imagenesPerfil, imagenesMenu: dto.imagenesMenu,
+    fldImgRefs5: dto.imagenesPerfil?.[4] ?? null, fldMenu2: dto.imagenesMenu?.[1] ?? null,
   };
 }
 
 @Component({
   selector: 'app-establecimiento-detalle',
   standalone: true,
-  imports: [FormsModule, RouterLink, LoadingSpinnerComponent, ModalComponent, EstablecimientoFormComponent, TextareaFieldComponent],
+  imports: [CommonModule, EtiquetasListadoPublicComponent, FormsModule, RouterLink, LoadingSpinnerComponent, ModalComponent, EstablecimientoFormComponent, TextareaFieldComponent],
   templateUrl: './establecimiento-detalle.component.html',
   styleUrls: ['./establecimiento-detalle.component.css']
 })
@@ -100,6 +106,13 @@ export class EstablecimientoDetalleComponent implements OnInit {
   private readonly botaneroService = inject(BotaneroService);
   private readonly toastService = inject(ToastService);
 
+  private readonly destroyRef = inject(DestroyRef);
+  private consultas = new Subscription();
+  readonly formDirty = signal(false);
+  readonly statsLoading = signal(false);
+  readonly statsError = signal('');
+  readonly comentariosLoading = signal(false);
+  readonly comentariosError = signal('');
   lugar = signal<BotaneroEstablecimientoDTO | null>(null);
   stats = signal<BotaneroStatsDTO | null>(null);
   comentarios = signal<listarComentario[]>([]);
@@ -116,48 +129,63 @@ export class EstablecimientoDetalleComponent implements OnInit {
   promos: BotaneroPromosDTO | null = null;
 
   ngOnInit(): void {
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    if (!id) {
-      this.error.set('Establecimiento no válido.');
-      this.cargando.set(false);
-      return;
-    }
-
-    this.cargarEstablecimiento(id);
-
-    // Stats y comentarios son secundarios: si fallan, la página sigue viva
-    this.botaneroService.obtenerStats(id).subscribe({
-      next: (r) => this.stats.set(r.cuerpoDeRespuesta),
-      error: () => {}
-    });
-    this.botaneroService.listarComentarios(id).subscribe({
-      next: (r) => this.comentarios.set(r.cuerpoDeRespuesta ?? []),
-      error: () => {}
-    });
+    this.destroyRef.onDestroy(() => this.consultas.unsubscribe());
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => this.cargarVista(Number(params.get('id'))));
   }
 
-  private cargarEstablecimiento(id: number): void {
-    this.botaneroService.obtenerEstablecimiento(id).subscribe({
-      next: (respuesta) => {
-        this.lugar.set(respuesta.cuerpoDeRespuesta);
+  cargarVista(id = this.lugar()?.idEstablecimiento ?? Number(this.route.snapshot.paramMap.get('id'))): void {
+    this.consultas.unsubscribe(); this.consultas = new Subscription();
+    this.lugar.set(null); this.stats.set(null); this.comentarios.set([]);
+    this.error.set(null); this.cargando.set(true);
+    this.showFormModal.set(false); this.showPromosModal.set(false);
+    if (!Number.isInteger(id) || id <= 0) { this.error.set('Establecimiento no válido.'); this.cargando.set(false); return; }
+    this.consultas.add(this.botaneroService.obtenerEstablecimiento(id).subscribe({
+      next: respuesta => {
+        if (respuesta?.codigoEstatus !== 1 || !respuesta.cuerpoDeRespuesta) this.error.set('No se encontró este establecimiento.');
+        else this.lugar.set(respuesta.cuerpoDeRespuesta);
         this.cargando.set(false);
       },
-      error: () => {
-        this.error.set('No se pudo cargar el establecimiento (¿pertenece a tu empresa?).');
-        this.cargando.set(false);
-      }
-    });
+      error: () => { this.error.set('No pudimos cargar el establecimiento.'); this.cargando.set(false); }
+    }));
+    this.cargarStats(id); this.cargarComentarios(id);
+  }
+
+  cargarStats(id = this.lugar()?.idEstablecimiento): void {
+    if (!id) return;
+    this.statsLoading.set(true); this.statsError.set('');
+    this.consultas.add(this.botaneroService.obtenerStats(id).subscribe({
+      next: r => {
+        if (r?.codigoEstatus === 1 && r.cuerpoDeRespuesta) this.stats.set(r.cuerpoDeRespuesta);
+        else this.statsError.set('No se pudieron cargar las estadísticas.');
+        this.statsLoading.set(false);
+      },
+      error: () => { this.statsError.set('No se pudieron cargar las estadísticas.'); this.statsLoading.set(false); }
+    }));
+  }
+
+  cargarComentarios(id = this.lugar()?.idEstablecimiento): void {
+    if (!id) return;
+    this.comentariosLoading.set(true); this.comentariosError.set('');
+    this.consultas.add(this.botaneroService.listarComentarios(id).subscribe({
+      next: r => {
+        if (r && r.codigoEstatus !== 1) this.comentariosError.set('No se pudieron cargar los comentarios.');
+        else this.comentarios.set(r?.cuerpoDeRespuesta ?? []);
+        this.comentariosLoading.set(false);
+      },
+      error: () => { this.comentariosError.set('No se pudieron cargar los comentarios.'); this.comentariosLoading.set(false); }
+    }));
   }
 
   abrirModalEditar(): void {
     const lugar = this.lugar();
     if (!lugar) return;
+    this.formDirty.set(false);
     this.formValue.set(dtoToFormValue(lugar));
     this.showFormModal.set(true);
   }
 
   cerrarModalEditar(): void {
-    this.showFormModal.set(false);
+    if (!this.guardando()) this.showFormModal.set(false);
   }
 
   abrirModalPromos(): void {
@@ -168,16 +196,25 @@ export class EstablecimientoDetalleComponent implements OnInit {
   }
 
   cerrarModalPromos(): void {
-    this.showPromosModal.set(false);
+    if (!this.guardandoPromos()) this.showPromosModal.set(false);
+  }
+
+  promosDirty(): boolean {
+    const lugar = this.lugar();
+    return !!lugar && !!this.promos && JSON.stringify(this.promos) !== JSON.stringify(dtoToPromos(lugar));
   }
 
   guardarPromos(): void {
     const lugar = this.lugar();
-    if (!lugar || !this.promos) return;
+    if (!lugar || !this.promos || this.guardandoPromos()) return;
 
     this.guardandoPromos.set(true);
-    this.botaneroService.editarPromos(lugar.idEstablecimiento, this.promos).subscribe({
+    this.botaneroService.editarPromos(lugar.idEstablecimiento, this.promos).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (respuesta) => {
+        if (respuesta?.codigoEstatus !== 1 || !respuesta.cuerpoDeRespuesta) {
+          this.toastService.showError(respuesta?.mensaje || 'No se guardaron los cambios.');
+          this.guardando.set(false); this.guardandoPromos.set(false); return;
+        }
         this.lugar.set(respuesta.cuerpoDeRespuesta);
         this.toastService.showSuccess('Promociones actualizadas correctamente.');
         this.guardandoPromos.set(false);
@@ -192,7 +229,7 @@ export class EstablecimientoDetalleComponent implements OnInit {
 
   onEstablecimientoSubmit(event: EstablecimientoFormSubmitEvent): void {
     const lugar = this.lugar();
-    if (!lugar) return;
+    if (!lugar || this.guardando()) return;
 
     const { values, files } = event;
 
@@ -237,19 +274,24 @@ export class EstablecimientoDetalleComponent implements OnInit {
       fldPromoViernes: lugar.fldPromoViernes,
       fldPromoSabado: lugar.fldPromoSabado,
       fldPromoDomingo: lugar.fldPromoDomingo,
+      fldPromo300Lugares: lugar.fldPromo300Lugares,
       ...imagenesAConservar(lugar.imagenesPerfil, lugar.imagenesMenu, files),
     };
 
     const formData = new FormData();
     formData.append('datos', new Blob([JSON.stringify(datos)], { type: 'application/json' }));
-    [files.foto, files.foto2, files.foto3, files.foto4].forEach((f) => {
+    [files.foto, files.foto2, files.foto3, files.foto4, files.foto5].forEach((f) => {
       if (f) formData.append('perfil', f, f.name);
     });
-    if (files.menu) formData.append('menu', files.menu, files.menu.name);
+    [files.menu, files.menu2].forEach(file => { if (file) formData.append('menu', file, file.name); });
 
     this.guardando.set(true);
-    this.botaneroService.editarEstablecimiento(lugar.idEstablecimiento, formData).subscribe({
+    this.botaneroService.editarEstablecimiento(lugar.idEstablecimiento, formData).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: (respuesta) => {
+        if (respuesta?.codigoEstatus !== 1 || !respuesta.cuerpoDeRespuesta) {
+          this.toastService.showError(respuesta?.mensaje || 'No se guardaron los cambios.');
+          this.guardando.set(false); this.guardandoPromos.set(false); return;
+        }
         this.lugar.set(respuesta.cuerpoDeRespuesta);
         this.toastService.showSuccess('Establecimiento actualizado correctamente.');
         this.guardando.set(false);

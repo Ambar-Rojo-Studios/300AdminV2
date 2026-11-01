@@ -1,4 +1,5 @@
 import { Component, inject, signal, ChangeDetectorRef } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, NonNullableFormBuilder } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -11,7 +12,7 @@ import { ToastService } from '../../../shared/services/toast.service';
 @Component({
         selector: 'app-registro-cliente',
         standalone: true,
-        imports: [CommonModule, ReactiveFormsModule],
+        imports: [CommonModule, ReactiveFormsModule, RouterLink],
         templateUrl: './registro-cliente.component.html',
         styleUrl: './registro-cliente.component.css'
 })
@@ -28,6 +29,8 @@ export class RegistroClienteComponent {
         private cdr = inject(ChangeDetectorRef);
 
         cargando = signal(false);
+        registrado = signal(false);
+        mostrarPassword = signal(false);
 
         private imagenPerfilFile: File | undefined;
 
@@ -38,7 +41,7 @@ export class RegistroClienteComponent {
                 fldTelefono: ['', [Validators.required, Validators.pattern(/^\+?\d{10,15}$/)]],
                 fldCorreoElectronico: ['', [Validators.required, Validators.email]],
                 fldFechaNacimiento: ['', Validators.required],
-                fldContrasenia: ['', Validators.required],
+                fldContrasenia: ['', [Validators.required, Validators.minLength(8)]],
                 fldImagenPerfil: ['']
         });
 
@@ -63,11 +66,11 @@ export class RegistroClienteComponent {
                         fldTelefono: formValue.fldTelefono.trim(),
                         fldCorreoElectronico: formValue.fldCorreoElectronico.trim(),
                         fldFechaNacimiento: formValue.fldFechaNacimiento,
-                        fldContrasenia: formValue.fldContrasenia.trim(),
+                        fldContrasenia: formValue.fldContrasenia,
                         fldImagenPerfil: ''
                 };
 
-                console.log('Enviando cliente:', cliente);
+
 
                 try {
                         const response: ApiResponseCliente<ClienteListDTO> =
@@ -75,6 +78,7 @@ export class RegistroClienteComponent {
 
                         if (response?.codigoEstatus === 1) {
                                 this.toastService.showSuccess('Cliente creado correctamente.');
+                                this.registrado.set(true);
                                 this.clienteForm.reset();
                                 this.imagenPerfilFile = undefined;
                         } else {

@@ -1,3 +1,5 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { ComponentFixture } from '@angular/core/testing';
 
@@ -26,6 +28,7 @@ describe('MapaEstablecimientoComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MapaEstablecimientoComponent],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MapaEstablecimientoComponent);

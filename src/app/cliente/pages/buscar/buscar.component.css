@@ -8,6 +8,10 @@
 }
 
 .buscar__header {
+  padding: 2rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -17,7 +21,8 @@
 
 .buscar__title {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: clamp(1.6rem, 4vw, 2.25rem);
+  letter-spacing: -.04em;
   font-weight: 700;
   color: var(--text, #111);
 }
@@ -48,3 +53,8 @@
 .buscar__mapa {
   width: 100%;
 }
+.buscar__contenido { display: grid; grid-template-columns: minmax(220px, 1fr) 2fr; gap: 1rem; }
+.buscar__resultados { list-style: none; padding: 0; max-height: 60vh; overflow: auto; }
+.buscar__resultados a { display: grid; gap: .4rem; padding: 1rem; margin-bottom: .5rem; border: 1px solid var(--border); border-radius: var(--r-md); color: var(--text); background: var(--surface); text-decoration: none; }
+.buscar__resultados span { color: var(--text-secondary); }
+@media (max-width: 768px) { .buscar__contenido { grid-template-columns: 1fr; } .buscar__resultados { max-height: 40vh; } }

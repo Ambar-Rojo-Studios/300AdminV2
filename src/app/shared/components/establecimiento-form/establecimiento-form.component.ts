@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { Component, ElementRef, Injector, afterNextRender, computed, effect, inject, input, output, signal, viewChild } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 
 import { TextFieldComponent } from '../form-fields/text-field.component';
@@ -75,9 +75,12 @@ type DiaKey = keyof Pick<
     MapaEstablecimientoComponent,
     EtiquetasSelectorComponent,
   ],
+  styleUrl: './establecimiento-form.component.css',
   templateUrl: './establecimiento-form.component.html',
 })
 export class EstablecimientoFormComponent {
+  private readonly injector = inject(Injector);
+  private readonly errorSummary = viewChild<ElementRef<HTMLElement>>('errorSummary');
   readonly establecimientoEtiquetasAdapter = inject(EstablecimientoEtiquetasAdapter);
 
   /** admin: muestra empresa/suscripción. botanero: esos campos los fija el backend con el token. */
@@ -99,6 +102,14 @@ export class EstablecimientoFormComponent {
 
   /** Se emite cuando el formulario es válido y el usuario confirma el envío. */
   formSubmit = output<EstablecimientoFormSubmitEvent>();
+  dirtyChange = output<boolean>();
+  readonly processing = signal<Partial<Record<keyof EstablecimientoFormFiles, boolean>>>({});
+  readonly processingFiles = computed(() => Object.values(this.processing()).some(Boolean));
+  readonly dirty = computed(() => JSON.stringify(this.form()) !== JSON.stringify(this.initialForm()) || Object.values(this.files()).some(Boolean));
+  private readonly initialForm = signal<EstablecimientoFormValue>(getEmptyEstablecimientoFormValue());
+  private fileSequence = 0;
+  private fileVersions: Partial<Record<keyof EstablecimientoFormFiles, number>> = {};
+
 
   form = signal<EstablecimientoFormValue>(getEmptyEstablecimientoFormValue());
 
@@ -119,11 +130,11 @@ export class EstablecimientoFormComponent {
   missingFields = computed<string[]>(() => {
     const f = this.form();
     const missing: string[] = [];
-    if (!f.fldNombre?.trim()) missing.push('Nombre');
-    if (!f.fldEstado?.trim()) missing.push('Estado');
-    if (!f.fldCiudad?.trim()) missing.push('Ciudad');
-    if (!f.fldDireccion?.trim()) missing.push('Dirección');
-    if (!f.fldReferenciaGeografica?.trim()) missing.push('Referencia geográfica');
+    if (!f.fldNombre.trim()) missing.push('Nombre');
+    if (!f.fldEstado.trim()) missing.push('Estado');
+    if (!f.fldCiudad.trim()) missing.push('Ciudad');
+    if (!f.fldDireccion.trim()) missing.push('Dirección');
+    if (!f.fldReferenciaGeografica.trim()) missing.push('Referencia geográfica');
     if (!f.fldHorarioApertura) missing.push('Horario de apertura');
     if (!f.fldHorarioCierre) missing.push('Horario de cierre');
     if (this.mode() === 'admin') {
@@ -169,17 +180,27 @@ export class EstablecimientoFormComponent {
     // (abrir modal en modo crear -> null, o en modo editar -> el registro).
     effect(() => {
       const incoming = this.value();
-      this.form.set(incoming ? { ...incoming } : getEmptyEstablecimientoFormValue());
+      const initial = { ...getEmptyEstablecimientoFormValue(), ...incoming };
+      initial.fldNombre ??= ''; initial.fldEstado ??= ''; initial.fldCiudad ??= '';
+      initial.fldDireccion ??= ''; initial.fldReferenciaGeografica ??= '';
+      initial.fldCoordLatitud ??= ''; initial.fldCoordLongitud ??= '';
+      this.form.set(initial);
+      this.initialForm.set(initial);
       this.files.set({ foto: null, foto2: null, foto3: null, foto4: null, menu: null });
+      this.fileVersions = {};
+      this.processing.set({});
       this.fileErrors.set({});
       this.filePreviews.set({});
       this.attemptedSubmit.set(false);
       this.formError.set(null);
     });
+    effect(() => this.dirtyChange.emit(this.dirty()));
   }
 
   updateField<K extends keyof EstablecimientoFormValue>(key: K, value: EstablecimientoFormValue[K]): void {
-    this.form.update((f) => ({ ...f, [key]: value }));
+    if (this.saving()) return;
+    const normalized = key === 'fldAntiguedadAnios' && (value === '' || Number.isNaN(value)) ? null : value;
+    this.form.update((f) => ({ ...f, [key]: normalized }));
   }
 
   onCoordsChange(coords: MapaEstablecimientoCoords): void {
@@ -199,9 +220,13 @@ export class EstablecimientoFormComponent {
   }
 
   async onFileSelected(slot: keyof EstablecimientoFormFiles, fileOrFiles: File | File[] | null): Promise<void> {
+    if (this.saving()) return;
+    const version = ++this.fileSequence;
+    this.fileVersions[slot] = version;
     const file = Array.isArray(fileOrFiles) ? fileOrFiles[0] ?? null : fileOrFiles;
 
     if (!file) {
+      this.processing.update(state => ({ ...state, [slot]: false }));
       this.files.update((f) => ({ ...f, [slot]: null }));
       this.filePreviews.update((p) => ({ ...p, [slot]: undefined }));
       this.fileErrors.update((errs) => ({ ...errs, [slot]: undefined }));
@@ -210,12 +235,16 @@ export class EstablecimientoFormComponent {
 
     // El procesador de utils valida tipo/tamaño y devuelve un preview en Base64
     // ya redimensionado; el archivo original (sin comprimir) es el que se sube al backend.
+    this.processing.update(state => ({ ...state, [slot]: true }));
+    this.files.update(state => ({ ...state, [slot]: null }));
     const base64Preview = await procesarYComprimirImagen(file, (mensaje, tipo) => {
-      if (tipo === 'error') {
+      if (tipo === 'error' && this.fileVersions[slot] === version) {
         this.fileErrors.update((errs) => ({ ...errs, [slot]: mensaje }));
       }
     });
 
+    if (this.fileVersions[slot] !== version) return;
+    this.processing.update(state => ({ ...state, [slot]: false }));
     if (!base64Preview) {
       this.files.update((f) => ({ ...f, [slot]: null }));
       this.filePreviews.update((p) => ({ ...p, [slot]: undefined }));
@@ -236,17 +265,32 @@ export class EstablecimientoFormComponent {
 
   handleSubmit(form: NgForm): void {
     if (this.saving()) return;
+    if (this.processingFiles()) { this.reportError('Espera a que termine de procesarse la imagen.'); return; }
 
     this.attemptedSubmit.set(true);
 
     const missing = this.missingFields();
     if (missing.length > 0) {
-      this.formError.set(`Falta completar: ${missing.join(', ')}.`);
+      this.reportError(`Falta completar: ${missing.join(', ')}.`);
       return;
     }
 
+    const errors: string[] = [];
+    const f = this.form();
+    if (f.fldCorreoElectronico && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.fldCorreoElectronico)) errors.push('Revisa el correo electrónico.');
+    const lat = Number(f.fldCoordLatitud), lng = Number(f.fldCoordLongitud);
+    if (!f.fldCoordLatitud.trim() || !f.fldCoordLongitud.trim() || !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) errors.push('Selecciona una ubicación válida en el mapa o escribe sus coordenadas.');
+    if (f.fldAntiguedadAnios != null && (!Number.isInteger(f.fldAntiguedadAnios) || f.fldAntiguedadAnios < 0)) errors.push('La antigüedad debe ser un número entero de años, igual o mayor que cero.');
+    if (Object.values(this.fileErrors()).some(Boolean)) errors.push('Corrige los archivos marcados antes de guardar.');
+    if (form.invalid) errors.push('Revisa los campos marcados.');
+    if (errors.length) { this.reportError(errors.join(' ')); return; }
     this.formError.set(null);
     const values = { ...this.form() };
     this.formSubmit.emit({ values, files: { ...this.files() } });
+  }
+
+  private reportError(message: string): void {
+    this.formError.set(message);
+    afterNextRender(() => this.errorSummary()?.nativeElement.focus(), { injector: this.injector });
   }
 }

@@ -24,6 +24,7 @@ let uniqueId = 0;
   standalone: true,
   imports: [CommonModule],
   templateUrl: './file-field.component.html',
+  styleUrl: './file-field.component.css',
 })
 export class FileFieldComponent {
   label = input('');
@@ -41,6 +42,10 @@ export class FileFieldComponent {
   fileChange = output<File | File[] | null>();
 
   fileName = signal<string | null>(null);
+
+  clear(input: HTMLInputElement): void {
+    input.value = ''; this.fileName.set(null); this.fileChange.emit(null);
+  }
 
   handleChange(event: Event): void {
     const input = event.target as HTMLInputElement;

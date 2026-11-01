@@ -1,3 +1,5 @@
+import { isDevMode } from '@angular/core';
+
 export interface FirebaseEnvironment {
   apiKey: string;
   authDomain: string;
@@ -47,19 +49,18 @@ const runtimeConfig = typeof window !== 'undefined' ? window.__env : undefined;
  * la URL de producción (ese archivo se sirve igual en `ng serve`). Sin esto, el
  * front en desarrollo autentica contra prod y el login con usuarios de prueba falla.
  *
- * ponytail: se resuelve por hostname en vez de duplicar todo environments.ts en un
- * environments.development.ts + fileReplacements. Techo: solo aplica en cliente —
- * durante el render SSR no hay window, así que ahí se sigue usando la URL de
- * runtime-config. Si el SSR en desarrollo llega a necesitar el backend local,
- * ese es el momento de pasar a fileReplacements.
+ * El servidor de desarrollo usa también la API local: SSR no tiene window y
+ * debe consultar el mismo origen de datos que el navegador. El build de
+ * producción conserva su configuración remota.
  */
 const LOCAL_HOSTNAMES = ['localhost', '127.0.0.1', '[::1]'];
 const isLocalhost = typeof window !== 'undefined' && LOCAL_HOSTNAMES.includes(window.location.hostname);
+const isLocalDevelopmentServer = typeof window === 'undefined' && isDevMode();
 
 export const environment: AppEnvironment = {
   ...defaults,
   ...(runtimeConfig || {}),
-  ...(isLocalhost ? { apiBaseUrl: 'http://localhost:8080' } : {}),
+  ...(isLocalhost || isLocalDevelopmentServer ? { apiBaseUrl: 'http://localhost:8080' } : {}),
   firebase: {
     ...defaults.firebase,
     ...(runtimeConfig?.firebase || {})

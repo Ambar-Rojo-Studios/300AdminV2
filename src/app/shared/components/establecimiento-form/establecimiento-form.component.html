@@ -1,19 +1,17 @@
-<form #establecimientoForm="ngForm" [id]="formId()" (ngSubmit)="handleSubmit(establecimientoForm)">
-  @if (formError()) {
-    <div style="background:#fdecea;color:#c0392b;border:1px solid #f5c6cb;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:0.9rem;">
-      {{ formError() }}
-    </div>
-  }
-
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">
-    <!-- ── Columna izquierda: datos generales ─────────────────────── -->
-    <div>
+<form novalidate #establecimientoForm="ngForm" [id]="formId()" (ngSubmit)="handleSubmit(establecimientoForm)">
+  <p class="form-intro">Los campos con * son obligatorios. Puedes editar los datos por sección y guardar al terminar.</p>
+  @if (formError()) { <div #errorSummary class="form-alert" role="alert" tabindex="-1">{{ formError() }}</div> }
+  @if (processingFiles()) { <p role="status">Procesando imagen… Espera antes de guardar.</p> }
+  <fieldset class="form-fields" [disabled]="saving()">
+    <section class="editor-section">
+      <h3>Información general</h3>
+      <div class="editor-grid">
       <app-text-field
         label="Nombre"
         name="fldNombre"
-        [(ngModel)]="form().fldNombre"
+        [ngModel]="form().fldNombre" (ngModelChange)="updateField('fldNombre', $event)"
         [required]="true"
-        [invalid]="attemptedSubmit() && !form().fldNombre?.trim()"
+        [invalid]="attemptedSubmit() && !form().fldNombre.trim()"
         errorMessage="El nombre es obligatorio."
       ></app-text-field>
 
@@ -21,7 +19,7 @@
         label="Descripción"
         name="fldDescripcion"
         [rows]="3"
-        [(ngModel)]="form().fldDescripcion"
+        [ngModel]="form().fldDescripcion" (ngModelChange)="updateField('fldDescripcion', $event)"
       ></app-textarea-field>
 
       @if (mode() === 'admin') {
@@ -30,7 +28,7 @@
           name="fkIdEmpresa"
           placeholder="Selecciona una empresa"
           [options]="empresaOptions()"
-          [(ngModel)]="form().fkIdEmpresa"
+          [ngModel]="form().fkIdEmpresa" (ngModelChange)="updateField('fkIdEmpresa', $event)"
           [required]="true"
           [invalid]="attemptedSubmit() && !form().fkIdEmpresa"
           errorMessage="Selecciona una empresa."
@@ -41,94 +39,98 @@
           name="fkIdSuscripcion"
           placeholder="Selecciona una suscripción"
           [options]="suscripcionOptions()"
-          [(ngModel)]="form().fkIdSuscripcion"
+          [ngModel]="form().fkIdSuscripcion" (ngModelChange)="updateField('fkIdSuscripcion', $event)"
           [required]="true"
           [invalid]="attemptedSubmit() && !form().fkIdSuscripcion"
           errorMessage="Selecciona una suscripción."
         ></app-select-field>
       }
 
+      @if (mode() === 'admin') {
       <app-select-field
         label="Tipo de establecimiento"
         name="fkIdTipoEstablecimiento"
         placeholder="Selecciona un tipo"
         [options]="tipoOptions()"
-        [(ngModel)]="form().fkIdTipoEstablecimiento"
+        [ngModel]="form().fkIdTipoEstablecimiento" (ngModelChange)="updateField('fkIdTipoEstablecimiento', $event)"
       ></app-select-field>
 
+      }
+      </div>
+    </section>
+    <section class="editor-section"><h3>Ubicación</h3><div class="editor-grid">
       <app-text-field
         label="Estado"
         name="fldEstado"
-        [(ngModel)]="form().fldEstado"
+        [ngModel]="form().fldEstado" (ngModelChange)="updateField('fldEstado', $event)"
         [required]="true"
-        [invalid]="attemptedSubmit() && !form().fldEstado?.trim()"
+        [invalid]="attemptedSubmit() && !form().fldEstado.trim()"
         errorMessage="El estado es obligatorio."
       ></app-text-field>
 
       <app-text-field
         label="Ciudad"
         name="fldCiudad"
-        [(ngModel)]="form().fldCiudad"
+        [ngModel]="form().fldCiudad" (ngModelChange)="updateField('fldCiudad', $event)"
         [required]="true"
-        [invalid]="attemptedSubmit() && !form().fldCiudad?.trim()"
+        [invalid]="attemptedSubmit() && !form().fldCiudad.trim()"
         errorMessage="La ciudad es obligatoria."
       ></app-text-field>
 
       <app-text-field
         label="Dirección"
         name="fldDireccion"
-        [(ngModel)]="form().fldDireccion"
+        [ngModel]="form().fldDireccion" (ngModelChange)="updateField('fldDireccion', $event)"
         [required]="true"
-        [invalid]="attemptedSubmit() && !form().fldDireccion?.trim()"
+        [invalid]="attemptedSubmit() && !form().fldDireccion.trim()"
         errorMessage="La dirección es obligatoria."
       ></app-text-field>
 
       <app-text-field
         label="Referencia geográfica"
         name="fldReferenciaGeografica"
-        [(ngModel)]="form().fldReferenciaGeografica"
+        [ngModel]="form().fldReferenciaGeografica" (ngModelChange)="updateField('fldReferenciaGeografica', $event)"
         [required]="true"
-        [invalid]="attemptedSubmit() && !form().fldReferenciaGeografica?.trim()"
+        [invalid]="attemptedSubmit() && !form().fldReferenciaGeografica.trim()"
         errorMessage="La referencia geográfica es obligatoria."
       ></app-text-field>
 
-      <app-mapa-establecimiento
-        [coords]="coordsActuales()"
-        [modo]="esCreacion() ? 'crear' : 'editar'"
-        [showLinkInput]="true"
-        (coordsChange)="onCoordsChange($event)"
-      ></app-mapa-establecimiento>
-    </div>
-
-    <!-- ── Columna derecha: contacto, horarios, fotos ──────────────── -->
-    <div>
+      </div>
+      <div class="editor-grid">
+        <label>Latitud *<input type="number" step="any" name="latitud" [ngModel]="form().fldCoordLatitud" (ngModelChange)="updateField('fldCoordLatitud', $event == null ? '' : '' + $event)" /></label>
+        <label>Longitud *<input type="number" step="any" name="longitud" [ngModel]="form().fldCoordLongitud" (ngModelChange)="updateField('fldCoordLongitud', $event == null ? '' : '' + $event)" /></label>
+      </div>
+      <p class="editor-hint">Haz clic en el mapa, arrastra el marcador o escribe las coordenadas. Revisa la ubicación antes de guardar.</p>
+      <app-mapa-establecimiento [coords]="coordsActuales()" [disabled]="saving()" [modo]="esCreacion() ? 'crear' : 'editar'" [showLinkInput]="true" [showCoordinateFields]="false" height="280px" (coordsChange)="onCoordsChange($event)" />
+    </section>
+    <section class="editor-section"><h3>Contacto y horarios</h3><div class="editor-grid">
       <app-text-field
         label="Correo electrónico"
         type="email"
         name="fldCorreoElectronico"
-        [(ngModel)]="form().fldCorreoElectronico"
+        [ngModel]="form().fldCorreoElectronico" (ngModelChange)="updateField('fldCorreoElectronico', $event)"
       ></app-text-field>
 
       <app-text-field
         label="Celular 1"
         name="fldCelular1"
-        [(ngModel)]="form().fldCelular1"
+        [ngModel]="form().fldCelular1" (ngModelChange)="updateField('fldCelular1', $event)"
       ></app-text-field>
 
       <app-text-field
         label="Celular 2"
         name="fldCelular2"
-        [(ngModel)]="form().fldCelular2"
+        [ngModel]="form().fldCelular2" (ngModelChange)="updateField('fldCelular2', $event)"
       ></app-text-field>
 
       <app-text-field
         label="Comentarios sobre el celular"
         name="fldCelularComentarios"
-        [(ngModel)]="form().fldCelularComentarios"
+        [ngModel]="form().fldCelularComentarios" (ngModelChange)="updateField('fldCelularComentarios', $event)"
       ></app-text-field>
 
-      <div style="display:flex;gap:12px;">
-        <div style="flex:1;">
+      <div class="editor-grid editor-span">
+        <div>
           <app-text-field
             label="Horario apertura"
             type="time"
@@ -140,7 +142,7 @@
             errorMessage="Obligatorio."
           ></app-text-field>
         </div>
-        <div style="flex:1;">
+        <div>
           <app-text-field
             label="Horario cierre"
             type="time"
@@ -159,7 +161,7 @@
         <div style="display:flex;flex-wrap:wrap;gap:12px;">
           @for (dia of diasSemana; track dia.key) {
             <label style="display:flex;align-items:center;gap:6px;font-weight:400;">
-              <input type="checkbox" [name]="dia.key" [(ngModel)]="form()[dia.key]" />
+              <input type="checkbox" [name]="dia.key" [ngModel]="form()[dia.key]" (ngModelChange)="updateField(dia.key, $event)" />
               {{ dia.label }}
             </label>
           }
@@ -169,11 +171,15 @@
       <app-text-field
         label="Sugerencia de la casa"
         name="fldSugerenciaDeLaCasa"
-        [(ngModel)]="form().fldSugerenciaDeLaCasa"
+        [ngModel]="form().fldSugerenciaDeLaCasa" (ngModelChange)="updateField('fldSugerenciaDeLaCasa', $event)"
       ></app-text-field>
 
+      </div></section>
+    <section class="editor-section"><h3>Fotos y menú</h3>
+      <p class="editor-hint">Si no eliges archivos nuevos, se conservan los actuales. Los archivos nuevos se agregan al final de la galería o del menú al guardar.</p>
+      <div class="editor-grid">
       <app-file-field
-        label="Foto (imagen de perfil)"
+        label="Foto 1"
         [required]="esCreacion()"
         [invalid]="!!fileErrors().foto || (attemptedSubmit() && esCreacion() && !files().foto)"
         [errorMessage]="fileErrors().foto || (attemptedSubmit() && esCreacion() && !files().foto ? 'La foto es obligatoria al crear.' : '')"
@@ -182,7 +188,6 @@
         (fileChange)="onFileSelected('foto', $event)"
       ></app-file-field>
 
-      @if (mode() === 'admin') {
         <app-file-field
           label="Foto 2"
           [invalid]="!!fileErrors().foto2"
@@ -206,46 +211,53 @@
           [previewUrl]="previewFor('foto4', form().fldImgRefs4)"
           (fileChange)="onFileSelected('foto4', $event)"
         ></app-file-field>
-      }
 
+      <app-file-field label="Foto 5" [invalid]="!!fileErrors().foto5" [errorMessage]="fileErrors().foto5 || ''" [previewUrl]="previewFor('foto5', form().fldImgRefs5 ?? null)" (fileChange)="onFileSelected('foto5', $event)" />
       <app-file-field
-        label="Menú"
+        label="Menú, imagen 1"
         [invalid]="!!fileErrors().menu"
         [errorMessage]="fileErrors().menu || ''"
         [previewUrl]="previewFor('menu', form().fldMenu)"
         (fileChange)="onFileSelected('menu', $event)"
       ></app-file-field>
 
+      <app-file-field label="Menú, imagen 2" [invalid]="!!fileErrors().menu2" [errorMessage]="fileErrors().menu2 || ''" [previewUrl]="previewFor('menu2', form().fldMenu2 ?? null)" (fileChange)="onFileSelected('menu2', $event)" />
+      </div>
+      <p class="editor-hint">Puedes guardar hasta 5 fotos y 2 imágenes del menú (JPG o PNG, máximo 5 MB por archivo). Usa Deshacer selección para conservar la imagen guardada.</p>
+    </section>
+    <section class="editor-section"><h3>Información adicional</h3><div class="editor-grid">
       <app-text-field
         label="Alimentos y bebidas"
         name="fldAlimentosBebidas"
-        [(ngModel)]="form().fldAlimentosBebidas"
+        [ngModel]="form().fldAlimentosBebidas" (ngModelChange)="updateField('fldAlimentosBebidas', $event)"
       ></app-text-field>
 
       <app-text-field
         label="Ticket promedio"
         name="fldTicketPromedio"
-        [(ngModel)]="form().fldTicketPromedio"
+        [ngModel]="form().fldTicketPromedio" (ngModelChange)="updateField('fldTicketPromedio', $event)"
       ></app-text-field>
 
       <app-text-field
         label="Antigüedad (años)"
         type="number"
         name="fldAntiguedadAnios"
-        [(ngModel)]="form().fldAntiguedadAnios"
+        [ngModel]="form().fldAntiguedadAnios" (ngModelChange)="updateField('fldAntiguedadAnios', $event)"
       ></app-text-field>
-    </div>
-  </div>
+    </div></section>
+  </fieldset>
 
-  @if (!esCreacion()) {
+  @if (!esCreacion() && mode() === 'admin') {
     <div class="form-group">
-      <label>Etiquetas</label>
+      <h3>Etiquetas</h3>
+      <p class="editor-hint">Las etiquetas se guardan al agregarlas o quitarlas, independientemente del botón Guardar.</p>
       <app-etiquetas-selector
         [entidadId]="form().idEstablecimiento"
         [adapter]="establecimientoEtiquetasAdapter"
+        [readonly]="saving()"
       ></app-etiquetas-selector>
     </div>
-  } @else {
+  } @else if (esCreacion()) {
     <p style="color:var(--text-muted);font-size:0.85rem;">
       Las etiquetas se podrán asignar una vez creado el establecimiento.
     </p>

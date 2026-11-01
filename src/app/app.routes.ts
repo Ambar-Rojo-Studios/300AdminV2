@@ -75,6 +75,7 @@ export const routes: Routes = [
   // ── Auth (sin layout) ────────────────────────────────────────
   {
     path: 'login/usuario',
+    title: 'Acceso al panel — 300 Lugares',
     canActivate: [guestGuard],
     loadComponent: () =>
       import(
@@ -83,6 +84,7 @@ export const routes: Routes = [
   },
   {
     path: 'login/cliente',
+    title: 'Iniciar sesión — 300 Lugares',
     canActivate: [guestGuard],
     loadComponent: () =>
       import(
@@ -91,6 +93,7 @@ export const routes: Routes = [
   },
   {
     path: 'registro/cliente',
+    title: 'Crear cuenta — 300 Lugares',
     loadComponent: () =>
       import(
         './auth/components/registro-cliente/registro-cliente.component'
@@ -98,6 +101,7 @@ export const routes: Routes = [
   },
   {
     path: 'forgot-password',
+    title: 'Recuperar contraseña — 300 Lugares',
     loadComponent: () =>
       import(
         './auth/components/password-reset-controller/components/forgot-password/forgot-password.component'
@@ -105,10 +109,16 @@ export const routes: Routes = [
   },
   {
     path: 'validate-code',
+    title: 'Confirmar código — 300 Lugares',
     loadComponent: () =>
       import(
         './auth/components/password-reset-controller/components/validate-code/validate-code.component'
       ).then((m) => m.ValidateCode),
+  },
+  {
+    path: 'reset-password',
+    title: 'Nueva contraseña — 300 Lugares',
+    loadComponent: () => import('./auth/components/password-reset-controller/components/reset-password/reset-password.component').then(m => m.ResetPasswordComponent),
   },
   {
     path: 'unauthorized',
@@ -121,6 +131,7 @@ export const routes: Routes = [
   // ── Panel admin (ROLE_USUARIO) ───────────────────────────────
   {
     path: 'admin',
+    title: 'Administración — 300 Lugares',
     canActivate: [authGuard, createRoleGuard(['usuario'])],
     loadComponent: () =>
       import('./layouts/admin-layout/admin-layout.component').then(
@@ -129,6 +140,7 @@ export const routes: Routes = [
     children: [
       {
         path: 'dashboard',
+        title: 'Dashboard de administración — 300 Lugares',
         loadComponent: () =>
           import('./admin/pages/dashboard/dashboard.component').then(
             (m) => m.DashboardComponent
@@ -150,19 +162,13 @@ export const routes: Routes = [
       },
       {
         path: 'establecimientos',
+        title: 'Establecimientos · Administración — 300 Lugares',
         loadComponent: () =>
           import(
             './admin/pages/establecimientos/establecimientos.component'
           ).then((m) => m.EstablecimientosComponent),
       },
-      {
-        path: 'establecimiento',
-        title: 'Admin — Establecimiento',
-        loadComponent: () =>
-          import(
-            './admin/pages/establecimiento/establecimiento-form.component'
-          ).then((m) => m.EstablecimientoFormComponent),
-      },
+      { path: 'establecimiento', redirectTo: 'establecimientos', pathMatch: 'full' },
       {
         path: 'marca',
         loadComponent: () =>
@@ -247,6 +253,7 @@ export const routes: Routes = [
   // ── Portal de botaneros (ROLE_BOTANERO) ──────────────────────
   {
     path: 'mi-lugar',
+    title: 'Mi panel — 300 Lugares',
     canActivate: [authGuard, createRoleGuard(['botanero'])],
     loadComponent: () =>
       import('./layouts/botanero-layout/botanero-layout.component').then(

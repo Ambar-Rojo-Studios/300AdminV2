@@ -1,0 +1,35 @@
+import { TestBed } from '@angular/core/testing';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { BehaviorSubject, of, throwError } from 'rxjs';
+import { BotaneroService } from '../../../services/botanero.service';
+import { EstablecimientoDetalleComponent } from './establecimiento-detalle.component';
+import { BotaneroEstablecimientoDTO } from '../../../models/botanero.model';
+import { getEmptyEstablecimientoFormValue } from '../../../shared/models/establecimiento-form.model';
+
+describe('Panel del botanero', () => {
+  it('distingue errores de estadísticas/comentarios y conserva promociones e imágenes al editar', async () => {
+    const lugar = { ...getEmptyEstablecimientoFormValue(), idEstablecimiento: 5, fldNombre: 'Lugar',
+      fldPromo300Lugares: 'Beneficio exclusivo', imagenesPerfil: ['foto1', 'foto2', 'foto3', 'foto4', 'foto5'], imagenesMenu: ['menu1', 'menu2'] } as unknown as BotaneroEstablecimientoDTO;
+    const editar = jasmine.createSpy().and.returnValue(of({ codigoEstatus: -1, mensaje: 'No guardado' }));
+    const params = new BehaviorSubject(convertToParamMap({ id: '5' }));
+    TestBed.configureTestingModule({ imports: [EstablecimientoDetalleComponent], providers: [
+      { provide: ActivatedRoute, useValue: { paramMap: params.asObservable(), snapshot: { paramMap: params.value } } },
+      { provide: BotaneroService, useValue: {
+        obtenerEstablecimiento: () => of({ codigoEstatus: 1, cuerpoDeRespuesta: lugar }),
+        obtenerStats: () => throwError(() => new Error('sin conexión')),
+        listarComentarios: () => throwError(() => new Error('sin conexión')),
+        editarEstablecimiento: editar
+      } }
+    ] }).overrideComponent(EstablecimientoDetalleComponent, { set: { template: '' } });
+    const fixture = TestBed.createComponent(EstablecimientoDetalleComponent); const c = fixture.componentInstance;
+    c.ngOnInit(); expect(c.statsError()).toBeTruthy(); expect(c.comentariosError()).toBeTruthy();
+    c.abrirModalEditar();
+    c.onEstablecimientoSubmit({ values: c.formValue()!, files: { foto: null, foto2: null, foto3: null, foto4: null, menu: null } });
+    const datos = (editar.calls.mostRecent().args[1] as FormData).get('datos') as Blob;
+    const payload = JSON.parse(await datos.text());
+    expect(payload.fldPromo300Lugares).toBe('Beneficio exclusivo'); expect(payload.imagenesPerfil.length).toBe(5); expect(payload.imagenesMenu).toEqual(['menu1','menu2']);
+    expect(c.showFormModal()).toBeTrue(); expect(c.guardando()).toBeFalse();
+    params.next(convertToParamMap({ id: '-1' })); expect(c.error()).toContain('no válido');
+    fixture.destroy();
+  });
+});

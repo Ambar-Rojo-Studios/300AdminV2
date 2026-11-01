@@ -1,109 +1,95 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, OnInit, OnDestroy, Output, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { firstValueFrom } from 'rxjs';
-
-import { EtiquetasService } from '../../../services/etiquetas.service';
-import { EstablecimientosService } from '../../../services/establecimientos.service';
-import {
-  ListCategoriaConEtiquetasDTO,
-} from '../../../models/etiquetas.model';
-import { EstablecimientoResponseDTO } from '../../../models/establecimiento.model';
+import { catchError, firstValueFrom, map, Observable, of, Subject, switchMap, takeUntil } from 'rxjs';
+import { EtiquetasPublicService } from '../../../services/etiquetas-public.service';
+import { EstablecimientosPublicService } from '../../../services/establecimientos-public.service';
+import { ApiResponseEstablecimiento, EstablecimientoListDTO, EstablecimientoResponseDTO } from '../../../models/establecimiento.model';
+import { ListCategoriaConEtiquetasDTO } from '../../../models/etiquetas.model';
 
 export interface CoordenadaFiltrada {
-  lat: number;
-  lng: number;
-  nombre: string;
-  imagen?: string;
-  dir?: string;
-  id?: number;
+  lat: number; lng: number; nombre: string; imagen?: string; dir?: string; id?: number;
 }
 
 @Component({
-  selector: 'app-filter-map',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './filtrar-mapa.component.html',
-  styleUrls: ['./filtrar-mapa.component.css'],
+  selector: 'app-filter-map', standalone: true, imports: [CommonModule],
+  templateUrl: './filtrar-mapa.component.html', styleUrls: ['./filtrar-mapa.component.css'],
 })
-export class FilterMapComponent implements OnInit {
+export class FilterMapComponent implements OnInit, OnDestroy {
+  @Output() panelCambio = new EventEmitter<boolean>();
   @Output() coordenadasFiltradas = new EventEmitter<CoordenadaFiltrada[]>();
-
   categoriasConEtiquetas: ListCategoriaConEtiquetasDTO[] = [];
   fldEtiquetCsv: number[] = [];
   esBusquedaEstricta = false;
   panelOculto = false;
+  cargandoCategorias = false;
+  errorCategorias = '';
+  cargando = false;
+  error = '';
+  total = 0;
+  sinCoordenadas = 0;
+  private readonly etiquetasService = inject(EtiquetasPublicService);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly service = inject(EstablecimientosPublicService);
+  private readonly consultas$ = new Subject<void>();
+  private readonly destroy$ = new Subject<void>();
 
-  constructor(
-    private readonly etiquetasService: EtiquetasService,
-    private readonly establecimientosService: EstablecimientosService
-  ) {}
-
-  ngOnInit(): void {
-    this.obtenerCategoriasConEtiquetas();
+  constructor() {
+    this.consultas$.pipe(
+      switchMap(() => {
+        this.cargando = true;
+        this.error = '';
+        this.coordenadasFiltradas.emit([]);
+        const consulta: Observable<ApiResponseEstablecimiento<Array<EstablecimientoListDTO | EstablecimientoResponseDTO>>> = this.fldEtiquetCsv.length
+          ? this.service.filtrarPorEtiquetas(this.fldEtiquetCsv, this.esBusquedaEstricta)
+          : this.service.obtenerEstablecimientosPublicos(1, 100);
+        return consulta.pipe(
+          map((res) => {
+            if (res && res.codigoEstatus !== 1) throw new Error(res.mensaje);
+            const lista = res?.cuerpoDeRespuesta ?? [];
+            const coords = lista.flatMap((est): CoordenadaFiltrada[] => {
+              const lat = parseFloat('fldCoordLatitud' in est ? est.fldCoordLatitud : est.fldCoorLatitud);
+              const lng = parseFloat('fldCoordLongitud' in est ? est.fldCoordLongitud : est.fldCoodLongitud);
+              if (!Number.isFinite(lat) || !Number.isFinite(lng)) return [];
+              return [{ id: est.idEstablecimiento, lat, lng, nombre: est.fldNombre,
+                imagen: est.fldImgRefs ?? undefined, dir: est.fldDireccion }];
+            });
+            return { total: lista.length, coords, error: '' };
+          }),
+          catchError(() => of({ total: 0, coords: [] as CoordenadaFiltrada[], error: 'No pudimos cargar los lugares. Intenta de nuevo.' }))
+        );
+      }), takeUntil(this.destroy$)
+    ).subscribe((res) => {
+      this.total = res.total;
+      this.sinCoordenadas = res.total - res.coords.length;
+      this.error = res.error;
+      this.cargando = false;
+      this.coordenadasFiltradas.emit(res.coords);
+      this.cdr.markForCheck();
+    });
   }
 
-  async obtenerCategoriasConEtiquetas(): Promise<void> {
+  ngOnInit() { void this.obtenerCategoriasConEtiquetas(); this.aplicarFiltrado(); }
+  ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
+
+  async obtenerCategoriasConEtiquetas() {
+    this.cargandoCategorias = true;
+    this.errorCategorias = '';
     try {
-      const res: any = await firstValueFrom(
-        this.etiquetasService.obtenerCategoriasConEtiquetas()
-      );
+      const res = await firstValueFrom(this.etiquetasService.obtenerCategoriasConEtiquetas());
+      if (res && res.codigoEstatus !== 1) throw new Error(res.mensaje);
       this.categoriasConEtiquetas = res?.cuerpoDeRespuesta ?? [];
-    } catch (err) {
-      console.error('[FilterMap] error al cargar categorías:', err);
-    }
+    } catch {
+      this.errorCategorias = 'No pudimos cargar los filtros.';
+    } finally { this.cargandoCategorias = false; this.cdr.markForCheck(); }
   }
 
-  alternarEtiqueta(idEtiqueta: number): void {
-    const idx = this.fldEtiquetCsv.indexOf(idEtiqueta);
-    if (idx === -1) this.fldEtiquetCsv.push(idEtiqueta);
-    else this.fldEtiquetCsv.splice(idx, 1);
+  alternarEtiqueta(id: number) {
+    this.fldEtiquetCsv = this.estaSeleccionada(id) ? this.fldEtiquetCsv.filter((actual) => actual !== id) : [...this.fldEtiquetCsv, id];
     this.aplicarFiltrado();
   }
-
-  alternarBusquedaEstricta(): void {
-    this.esBusquedaEstricta = !this.esBusquedaEstricta;
-    this.aplicarFiltrado();
-  }
-
-  async aplicarFiltrado(): Promise<void> {
-    if (this.fldEtiquetCsv.length === 0) {
-      this.coordenadasFiltradas.emit([]);
-      return;
-    }
-    try {
-      const res: any = await firstValueFrom(
-        this.establecimientosService.filtrarPorEtiquetas(
-          this.fldEtiquetCsv,
-          this.esBusquedaEstricta
-        )
-      );
-      const list = (res?.cuerpoDeRespuesta ?? []) as EstablecimientoResponseDTO[];
-      const coords: CoordenadaFiltrada[] = list
-        .map((est) => {
-          const lat = parseFloat(est.fldCoorLatitud);
-          const lng = parseFloat(est.fldCoodLongitud);
-          if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
-          return {
-            id: est.idEstablecimiento,
-            lat,
-            lng,
-            nombre: est.fldNombre,
-            imagen: est.fldImgRefs,
-            dir: est.fldDireccion,
-          } as CoordenadaFiltrada;
-        })
-        .filter((x): x is CoordenadaFiltrada => x !== null);
-      this.coordenadasFiltradas.emit(coords);
-    } catch (err) {
-      console.error('[FilterMap] error al filtrar:', err);
-    }
-  }
-
-  estaSeleccionada(idEtiqueta: number): boolean {
-    return this.fldEtiquetCsv.includes(idEtiqueta);
-  }
-
-  alternarPanel(): void {
-    this.panelOculto = !this.panelOculto;
-  }
+  alternarBusquedaEstricta() { this.esBusquedaEstricta = !this.esBusquedaEstricta; this.aplicarFiltrado(); }
+  aplicarFiltrado() { this.consultas$.next(); }
+  limpiarFiltros() { this.fldEtiquetCsv = []; this.esBusquedaEstricta = false; this.aplicarFiltrado(); }
+  estaSeleccionada(id: number) { return this.fldEtiquetCsv.includes(id); }
+  alternarPanel() { this.panelOculto = !this.panelOculto; this.panelCambio.emit(this.panelOculto); }
 }
