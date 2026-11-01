@@ -1,0 +1,129 @@
+<header class="page-header">
+  <div>
+    <span class="eyebrow">Comunicación</span>
+    <h1>Notificaciones</h1>
+    <p>Envía avisos a los clientes con dispositivos activos y consulta los resultados.</p>
+  </div>
+</header>
+
+<section class="resumen-grid" aria-label="Resumen de dispositivos">
+  @if (resumenError()) {
+    <div class="resumen-error card" role="alert">
+      <p>{{ resumenError() }}</p>
+      <button type="button" class="btn-secondary" (click)="cargarResumen()">Reintentar</button>
+    </div>
+  } @else if (resumen(); as datos) {
+    <article class="resumen-card card"><span>Tokens activos</span><strong>{{ datos.tokensActivos }}</strong></article>
+    <article class="resumen-card card"><span>Clientes con token</span><strong>{{ datos.clientesConToken }}</strong></article>
+  } @else {
+    <article class="resumen-card card" role="status"><span>Cargando resumen…</span></article>
+  }
+</section>
+
+<section class="panel card" aria-labelledby="form-titulo">
+  <div class="panel-heading"><h2 id="form-titulo">Preparar notificación</h2><p>Revisa el título, el mensaje y la audiencia antes de confirmar.</p></div>
+
+  <form [formGroup]="form" (ngSubmit)="solicitarConfirmacion()" novalidate>
+    <div class="form-grid">
+      <label class="campo">
+        <span>Título <small>{{ contarCaracteres('titulo') }}/65</small></span>
+        <input type="text" formControlName="titulo" maxlength="65" autocomplete="off" />
+        @if (form.controls.titulo.touched && form.controls.titulo.invalid) { <em>Escribe un título de 1 a 65 caracteres.</em> }
+      </label>
+
+      <label class="campo campo-ancho">
+        <span>Mensaje <small>{{ contarCaracteres('mensaje') }}/240</small></span>
+        <textarea formControlName="mensaje" maxlength="240" rows="4"></textarea>
+        @if (form.controls.mensaje.touched && form.controls.mensaje.invalid) { <em>Escribe un mensaje de 1 a 240 caracteres.</em> }
+      </label>
+
+      <label class="campo">
+        <span>Audiencia</span>
+        <select formControlName="audiencia" (change)="actualizarAudiencia($any($event.target).value)">
+          <option value="TODOS">Todos los clientes</option>
+          <option value="CLIENTES">Clientes seleccionados</option>
+        </select>
+      </label>
+
+      @if (form.controls.audiencia.value === 'CLIENTES') {
+        <label class="campo campo-ancho">
+          <span>IDs de clientes <small>{{ idsParseados().length }}/500</small></span>
+          <textarea formControlName="idsClientes" rows="3" placeholder="Ejemplo: 12, 28, 45" (blur)="validarIds()"></textarea>
+          <small>Separa los IDs con comas, espacios o saltos de línea.</small>
+          @if (idsError()) { <em role="alert">{{ idsError() }}</em> }
+        </label>
+      }
+
+      <label class="campo">
+        <span>Tipo de notificación</span>
+        <select formControlName="tipo" (change)="actualizarTipo($any($event.target).value)">
+          <option value="GENERAL">General</option>
+          <option value="ESTABLECIMIENTO">Establecimiento</option>
+          <option value="PROMO">Promoción</option>
+          <option value="CAPSULA">Cápsula cultural</option>
+        </select>
+      </label>
+
+      @if (requiereDestino()) {
+        @if (requiereEstablecimiento()) {
+          <label class="campo">
+            <span>Establecimiento destino</span>
+            <select formControlName="idDestino" required>
+              <option value="">Selecciona un establecimiento</option>
+              @for (establecimiento of opcionesEstablecimiento(); track establecimiento.idEstablecimiento) {
+                <option [value]="establecimiento.idEstablecimiento">{{ establecimiento.fldNombre }}</option>
+              }
+            </select>
+            @if (cargandoEstablecimientos()) { <small>Cargando establecimientos…</small> }
+            @if (form.controls.idDestino.touched && !form.controls.idDestino.value) { <em>Selecciona un establecimiento.</em> }
+          </label>
+        } @else {
+          <label class="campo">
+            <span>ID de cápsula</span>
+            <input type="number" min="1" step="1" formControlName="idDestino" required />
+            @if (form.controls.idDestino.touched && !(+form.controls.idDestino.value > 0)) { <em>Ingresa un ID positivo.</em> }
+          </label>
+        }
+      }
+
+      <label class="campo campo-ancho">
+        <span>URL de imagen <small>Opcional</small></span>
+        <input type="url" formControlName="imagenUrl" placeholder="https://ejemplo.com/imagen.jpg" (blur)="validarUrl()" />
+        @if (urlError()) { <em role="alert">{{ urlError() }}</em> }
+      </label>
+    </div>
+
+    @if (resumen(); as datos) {
+      <p class="destinatarios-info">Hay {{ datos.tokensActivos }} dispositivos activos en total. Para una lista de clientes, el servidor determinará el número exacto de dispositivos asociados.</p>
+    }
+    <button type="submit" class="btn-primary" [disabled]="guardando()">Revisar y enviar</button>
+  </form>
+
+  @if (resultado(); as envio) {
+    <div class="resultado-envio" role="status">
+      <h3>Resultado del envío</h3>
+      <p>Destinatarios: <strong>{{ envio.destinatarios }}</strong> · Enviados: <strong>{{ envio.enviados }}</strong> · Fallidos: <strong>{{ envio.fallidos }}</strong> · Tokens desactivados: <strong>{{ envio.tokensDesactivados }}</strong></p>
+    </div>
+  }
+</section>
+
+<section class="panel card" aria-labelledby="historial-titulo">
+  <div class="panel-heading"><h2 id="historial-titulo">Historial</h2><p>Envíos recientes y sus contadores.</p></div>
+  @if (historialError()) {
+    <div class="resumen-error" role="alert"><p>{{ historialError() }}</p><button type="button" class="btn-secondary" (click)="cargarHistorial()">Reintentar</button></div>
+  } @else {
+    <app-data-table [columns]="columns" [data]="filasHistorial()" [loading]="historialLoading()" emptyMessage="Aún no se han enviado notificaciones." [trackByFn]="trackNotificacion" />
+  }
+</section>
+
+<app-confirm-dialog
+  [open]="mostrarConfirmacion()"
+  title="Confirmar envío"
+  message="Se enviará a"
+  [itemName]="(form.controls.audiencia.value === 'TODOS' ? totalConfirmacion() : 'hasta ' + totalConfirmacion()) + ' dispositivos'"
+  confirmText="Enviar notificación"
+  cancelText="Volver"
+  [loading]="guardando()"
+  (confirm)="enviar()"
+  (cancel)="cancelarConfirmacion()"
+/> 

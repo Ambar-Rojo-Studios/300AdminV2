@@ -246,6 +246,12 @@ export const routes: Routes = [
           import('./admin/pages/canjes/canjes.component').then(m => m.CanjesComponent),
       },
       {
+        path: 'notificaciones',
+        title: 'Notificaciones — Administración — 300 Lugares',
+        loadComponent: () =>
+          import('./admin/pages/notificaciones/notificaciones.component').then(m => m.NotificacionesComponent),
+      },
+      {
         path: 'comentarios',
         loadComponent: () =>
           import('./admin/pages/comentarios/comentarios.component').then(
